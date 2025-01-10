@@ -1,25 +1,37 @@
 package namviet.rfid_api.api;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import namviet.rfid_api.constant.ResponseObject;
-import namviet.rfid_api.entity.AccountE;
+import namviet.rfid_api.dto.DonHangDTO;
+import namviet.rfid_api.entity.Account;
+import namviet.rfid_api.entity.DonHang;
+import namviet.rfid_api.entity.DonHangSanPham;
+import namviet.rfid_api.repository.DonHangRepository;
 import namviet.rfid_api.service.AccountService;
+import namviet.rfid_api.service.DonHangSanPhamService;
+import namviet.rfid_api.service.DonHangService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/private")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class HomeApi {
 
-    @Autowired
-    AccountService accountService;
+    final AccountService accountService;
+
 
     @GetMapping("/test")
     public String home() {
-        AccountE account = accountService.findByAccountId(2);
+        Account account = accountService.findByAccountId(2);
         return account.getEmail();
     }
 

@@ -10,7 +10,12 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class RoleE {
+public class Role {
+
+    public Role(int roleId) {
+        this.roleId = roleId;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "role_id")

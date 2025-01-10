@@ -2,6 +2,7 @@ package namviet.rfid_api.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 @Builder
 @Getter
@@ -10,27 +11,28 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "account")
-public class AccountE {
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "account_id")
-    private int accountId;
+    int accountId;
 
     @Column(name = "user_name", length = 50)
-    private String userName;
+    String userName;
 
     @Column(name = "email", length = 50, nullable = false)
-    private String email;
+    String email;
 
     @Column(name = "password", length = 100, nullable = false)
-    private String password;
+    String password;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
-    private RoleE role;
+    Role role;
 
-    @Column(name = "is_active", columnDefinition = "bit default 1")
-    private boolean isActive = true;
+    @Column(name = "is_active", columnDefinition = "true")
+    boolean isActive;
 
     @Override
     public String toString() {
@@ -41,6 +43,5 @@ public class AccountE {
                 ", isActive=" + isActive +
                 '}';
     }
-
 }
 
