@@ -12,6 +12,7 @@ public class DuLieuDTO {
     private String dataGoc;
     private String noiDung;
     private Integer donHangId;
-
+    private String noiDungBienDoi;
+    private Integer donHangSanPhamId;
 }
 

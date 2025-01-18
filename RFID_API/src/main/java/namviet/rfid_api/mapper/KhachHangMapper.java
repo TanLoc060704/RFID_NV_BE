@@ -7,7 +7,7 @@ import org.mapstruct.factory.Mappers;
 
 @Mapper(componentModel = "spring")
 public interface KhachHangMapper {
-    KhachHangDTO toDTO (KhachHang khachHangE);
-    KhachHang toEntity(KhachHang khachHangE);
+    KhachHangDTO toDTO (KhachHang khachHang);
+    KhachHang toEntity(KhachHangDTO khachHangdto);
 
 }

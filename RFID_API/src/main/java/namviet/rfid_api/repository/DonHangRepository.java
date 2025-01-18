@@ -12,4 +12,5 @@ public interface DonHangRepository extends JpaRepository<DonHang,Integer> {
     List<DonHang> findAll();
     List<DonHang> findByMaLenhContaining(String meLenh);
     DonHang findByDonHangId(int donHangId);
+    DonHang findByMaLenh(String maLenh);
 }

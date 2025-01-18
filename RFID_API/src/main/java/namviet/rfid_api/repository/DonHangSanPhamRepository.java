@@ -12,5 +12,6 @@ public interface DonHangSanPhamRepository extends JpaRepository<DonHangSanPham, 
     Optional<DonHangSanPham> findByDonHangSanPhamId(int DonHangSanPhamId);
     List<DonHangSanPham> findByDonHangMaLenhContaining(String maLenh);
     List<DonHangSanPham> findByDonHangDonHangId(int donHangId);
+    boolean existsByTenFile(String tenFile);
 
 }

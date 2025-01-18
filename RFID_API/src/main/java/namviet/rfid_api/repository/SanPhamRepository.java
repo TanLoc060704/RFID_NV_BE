@@ -13,4 +13,6 @@ public interface SanPhamRepository extends JpaRepository<SanPham,String> {
     List<SanPham> findBySkuContaining(String sku);
 
     List<SanPham> findBySkuIn(List<String> skuList);
+
+    SanPham findBySku(String sku);
 }

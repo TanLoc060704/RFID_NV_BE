@@ -47,6 +47,10 @@ public class DuLieuServiceImpl implements DuLieuService {
         }
         List<DonHangSanPham> dsDonHangSanPham = donHangSanPhamRepository.findByDonHangDonHangId(donHangSanPhamID);
 
+        if(dsDonHangSanPham.size() <= 0 ){
+            throw new CustomException("Id Don Hang Khong Ton Tai",HttpStatus.BAD_REQUEST);
+        }
+
         for (DonHangSanPham donHangSanPham : dsDonHangSanPham) {
             SanPham sanPham = donHangSanPham.getSanPham();
             int soLuong = donHangSanPham.getSoLuong() + soLuongThem(donHangSanPham.getSoLuong());
@@ -63,7 +67,7 @@ public class DuLieuServiceImpl implements DuLieuService {
 
                 SanPham sanPhamDecoder = Decoder.epcToDulieu(epc);
 
-                Dulieu dulieu = new Dulieu(epc,sanPham.getSku(),sanPham,donHangSanPham.getDonHang());
+                Dulieu dulieu = new Dulieu(epc,sanPham.getSku(),sanPham,donHangSanPham.getDonHang(),donHangSanPham);
                 Upc upcExcel = new Upc(sanPhamDecoder.getUpc().getUpc(),sanPhamDecoder.getUpc().getSerial());
 
                 try{
@@ -75,7 +79,6 @@ public class DuLieuServiceImpl implements DuLieuService {
                 }catch (Exception e){
                     throw new CustomException(String.valueOf(e), HttpStatus.BAD_REQUEST);
                 }
-
 
                 if (i == soLuong - 1) {
                     Upc upcSave = new Upc(sanPham.getUpc().getUpcId(),sanPham.getUpc().getUpc(), serial);

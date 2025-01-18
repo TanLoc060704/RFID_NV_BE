@@ -5,10 +5,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import namviet.rfid_api.constant.ResponseObject;
 import namviet.rfid_api.dto.DonHangSanPhamDTO;
+import namviet.rfid_api.exception.CustomException;
 import namviet.rfid_api.service.DonHangSanPhamService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.List;
 import java.util.Optional;
 
@@ -70,5 +73,27 @@ public class DonHangSanPhamAPI {
                 .build();
     }
 
+    @PostMapping("/import-file")
+    public ResponseObject<?> importFile(@RequestParam("dsFile") List<MultipartFile> dsFile, @RequestParam("maLenh") String maLenh,@RequestParam("sku") String sku, @RequestParam("viTriEPC") int viTriEpc){
+        try {
+            List<DonHangSanPhamDTO> dsDonHangSanPham = donHangSanPhamService.importFile(dsFile,maLenh,sku,viTriEpc);
+            return ResponseObject.builder()
+                    .status(HttpStatus.OK)
+                    .message("Import thanh công")
+                    .data(dsDonHangSanPham)
+                    .build();
+        } catch (CustomException a){
+          throw a;
+        } catch (Exception e) {
+            throw new CustomException(e.getMessage(), HttpStatus.BAD_REQUEST) ;
+        }
+    }
 
+    @ExceptionHandler(CustomException.class)
+    public ResponseObject<?> handleCustomException(CustomException e) {
+        return ResponseObject.builder()
+                .status(e.getStatus())
+                .message(e.getMessage())
+                .build();
+    }
 }
