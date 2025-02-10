@@ -8,6 +8,7 @@ import namviet.rfid_api.service.NguyenVatLieuService;
 import namviet.rfid_api.constant.ResponseObject;
 import namviet.rfid_api.exception.CustomException;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class NguyenVatLieuAPI {
     private final NguyenVatLieuService nguyenVatLieuService;
 
     @PostMapping("/nguyen-vat-lieu")
+    @Transactional
     public ResponseObject<NguyenVatLieuDTO> createNguyenVatLieu(@RequestBody NguyenVatLieuDTO nguyenVatLieuDTO) {
         try {
             NguyenVatLieuDTO createdNguyenVatLieu = nguyenVatLieuService.createNguyenVatLieu(nguyenVatLieuDTO);
@@ -76,12 +78,14 @@ public class NguyenVatLieuAPI {
                     .data(updatedNguyenVatLieu)
                     .build();
         } catch (Exception e) {
+            e.printStackTrace();
             throw new CustomException("Error updating NguyenVatLieu", HttpStatus.BAD_REQUEST);
         }
     }
 
     // Xóa NguyenVatLieu
     @DeleteMapping("/nguyen-vat-lieu/{id}")
+    @Transactional
     public ResponseObject<Void> deleteNguyenVatLieu(@PathVariable Integer id) {
         try {
             nguyenVatLieuService.deleteNguyenVatLieu(id);

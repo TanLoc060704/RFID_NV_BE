@@ -4,13 +4,16 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import namviet.rfid_api.dto.NguyenVatLieuDTO;
+import namviet.rfid_api.entity.Account;
 import namviet.rfid_api.entity.NguyenVatLieu;
 import namviet.rfid_api.exception.CustomException;
 import namviet.rfid_api.mapper.NguyenVatLieuMapper;
 import namviet.rfid_api.repository.NguyenVatLieuRepository;
+import namviet.rfid_api.repository.UserRepository;
 import namviet.rfid_api.service.NguyenVatLieuService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
@@ -24,7 +27,7 @@ public class NguyenVatLieuServiceImpl implements NguyenVatLieuService {
 
     private final NguyenVatLieuRepository nguyenVatLieuRepository;
     private final NguyenVatLieuMapper nguyenVatLieuMapper;
-
+    private final UserRepository userRepository;
     @Override
     public NguyenVatLieuDTO createNguyenVatLieu(NguyenVatLieuDTO nguyenVatLieuDTO) {
         // Kiểm tra validation và thêm dữ liệu mới
@@ -52,13 +55,18 @@ public class NguyenVatLieuServiceImpl implements NguyenVatLieuService {
     }
 
     @Override
+    @Transactional
     public NguyenVatLieuDTO updateNguyenVatLieu( Integer nvlId, NguyenVatLieuDTO nguyenVatLieuDTO) {
         if (!nguyenVatLieuRepository.existsById(nvlId)) {
             throw new CustomException("NguyenVatLieu not found with id " + nvlId, HttpStatus.NOT_FOUND);
         }
-
         NguyenVatLieu nguyenVatLieu = nguyenVatLieuMapper.toEntity(nguyenVatLieuDTO);
         nguyenVatLieu.setNvlId(nvlId);
+//        Account account = userRepository.findByAccountId(nguyenVatLieuDTO.getAccountId());
+//        if(account == null){
+//            throw new CustomException("Account not found with id " + nvlId, HttpStatus.NOT_FOUND);
+//        }
+//        nguyenVatLieu.setAccount(account);
         nguyenVatLieu = nguyenVatLieuRepository.save(nguyenVatLieu);
         return nguyenVatLieuMapper.toDTO(nguyenVatLieu);
     }

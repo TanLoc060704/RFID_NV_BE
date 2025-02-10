@@ -1,6 +1,7 @@
 package namviet.rfid_api.dto;
 
 import lombok.*;
+import namviet.rfid_api.entity.NhanVien;
 
 @Data
 public class AccountDTO {
@@ -11,6 +12,7 @@ public class AccountDTO {
     private String password;
     private int roleId;
     private boolean isActive = true;
+    private int nhanVienId;
 
     public boolean getIsActive() {
         return isActive;

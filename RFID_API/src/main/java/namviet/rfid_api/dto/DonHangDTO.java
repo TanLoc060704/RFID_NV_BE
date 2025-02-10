@@ -13,7 +13,7 @@ public class DonHangDTO {
     String po;
     Integer total;
     String loaiData;
-
+    String username;
     Integer nhanVienId;
     Integer khachHangId;
 }

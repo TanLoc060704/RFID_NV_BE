@@ -9,8 +9,10 @@ import org.mapstruct.Mapping;
 public interface AccountMapper {
 
     @Mapping(source = "role.roleId", target = "roleId")
+    @Mapping(source = "nhanVien.nhanVienId", target = "nhanVienId")
     AccountDTO toDto(Account account);
 
     @Mapping(source = "roleId",target = "role.roleId")
+    @Mapping(source = "nhanVienId", target = "nhanVien.nhanVienId")
     Account toEntity(AccountDTO accountDTO);
 }

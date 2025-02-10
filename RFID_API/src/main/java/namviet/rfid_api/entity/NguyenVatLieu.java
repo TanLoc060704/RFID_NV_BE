@@ -7,6 +7,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.text.Format;
+import java.util.Date;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -31,4 +34,13 @@ public class NguyenVatLieu {
 
     @Column(name = "so_pcs_hu", columnDefinition = "int default 0")
     Integer soPcsHu = 0;
+
+    @Column(name = "ngay_nhap")
+    @Temporal(TemporalType.DATE)
+    Date ngayNhap = new Date();
+
+
+    @ManyToOne()
+    @JoinColumn(name = "account_id", referencedColumnName = "account_id")
+    Account account;
 }

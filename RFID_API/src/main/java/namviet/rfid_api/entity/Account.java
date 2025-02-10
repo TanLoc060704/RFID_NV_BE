@@ -43,5 +43,8 @@ public class Account {
                 ", isActive=" + isActive +
                 '}';
     }
+
+    @OneToOne(mappedBy = "account",fetch = FetchType.LAZY)
+    NhanVien nhanVien;
 }
 

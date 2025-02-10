@@ -22,7 +22,7 @@ public class NhanVien {
     @Column(name = "chuc_vu", length = 50)
     String chucVu;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "account_id", referencedColumnName = "account_id")
     Account account;
 }

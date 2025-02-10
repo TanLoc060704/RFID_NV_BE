@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Date;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,4 +19,8 @@ public class NguyenVatLieuDTO {
     String lot;
     Integer soPcsTot;
     Integer soPcsHu;
+    Date ngayNhap;
+    String tenNhanVien;
+//    int nhanVienId;
+    int accountId;
 }
