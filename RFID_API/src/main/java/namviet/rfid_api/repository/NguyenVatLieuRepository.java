@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository;
 public interface NguyenVatLieuRepository extends JpaRepository<NguyenVatLieu,Integer> {
 
     boolean existsByCode(String code);
+
+
 }

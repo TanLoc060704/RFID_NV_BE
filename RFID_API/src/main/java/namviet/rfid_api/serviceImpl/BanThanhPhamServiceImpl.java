@@ -7,6 +7,8 @@ import namviet.rfid_api.exception.CustomException;
 import namviet.rfid_api.mapper.BanThanhPhamMapper;
 import namviet.rfid_api.repository.BanThanhPhamRepository;
 import namviet.rfid_api.service.BanThanhPhamService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -46,6 +48,7 @@ public class BanThanhPhamServiceImpl implements BanThanhPhamService {
                 .orElseThrow(() -> new CustomException("BanThanhPham not found", HttpStatus.NOT_FOUND));
         BanThanhPham updatedEntity = mapper.toEntity(banThanhPhamDTO);
         updatedEntity.setBanThanhPhamId(existing.getBanThanhPhamId());
+        System.out.println(updatedEntity.getNvl().getNvlId());
         return mapper.toDTO(repository.save(updatedEntity));
     }
 
@@ -55,5 +58,16 @@ public class BanThanhPhamServiceImpl implements BanThanhPhamService {
             throw new CustomException("BanThanhPham not found", HttpStatus.NOT_FOUND);
         }
         repository.deleteById(id);
+    }
+
+    @Override
+    public Page<BanThanhPhamDTO> getBanThanhPhamPagination(Pageable pageable) {
+        return repository.findAll(pageable).map(mapper::toDTO);
+    }
+
+    @Override
+    public Page<BanThanhPhamDTO> searchWithFTSService(String searchText, Pageable pageable) {
+        Page<BanThanhPham> entities = repository.searchWithFTS(searchText,pageable);
+        return entities.map(mapper::toDTO);
     }
 }

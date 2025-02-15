@@ -7,6 +7,10 @@ import namviet.rfid_api.constant.ResponseObject;
 import namviet.rfid_api.dto.BanThanhPhamDTO;
 import namviet.rfid_api.exception.CustomException;
 import namviet.rfid_api.service.BanThanhPhamService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,6 +50,45 @@ public class BanThanhPhamApi {
         } catch (CustomException a) {
           throw a;
         } catch (Exception e) {
+            throw new CustomException("Error fetching BanThanhPham", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/pagination")
+    public ResponseObject<Page<BanThanhPhamDTO>> getAllPagination(@RequestParam(defaultValue = "0") int page,
+                                                                  @RequestParam(defaultValue = "10") int size) {
+        try {
+
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "banThanhPhamId"));
+
+            return ResponseObject.<Page<BanThanhPhamDTO>>builder()
+                    .status(HttpStatus.OK)
+                    .message("Fetched all BanThanhPham successfully")
+                    .data(banThanhPhamService.getBanThanhPhamPagination(pageable))
+                    .build();
+        } catch (CustomException a) {
+            throw a;
+        } catch (Exception e) {
+            throw new CustomException("Error fetching BanThanhPham", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/search")
+    public ResponseObject<Page<BanThanhPhamDTO>> searchWithFTS(@RequestParam(defaultValue = "0") int page,
+                                                               @RequestParam(defaultValue = "10") int size,
+                                                               @RequestParam("searchText") String searchText) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            String ftsSearchText = "\"" + searchText + "*\"";
+             return ResponseObject.<Page<BanThanhPhamDTO>>builder()
+                    .status(HttpStatus.OK)
+                    .message("Fetched all BanThanhPham successfully")
+                    .data(banThanhPhamService.searchWithFTSService(ftsSearchText, pageable))
+                    .build();
+        } catch (CustomException a) {
+            throw a;
+        } catch (Exception e) {
+            e.printStackTrace();
             throw new CustomException("Error fetching BanThanhPham", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
