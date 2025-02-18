@@ -7,6 +7,10 @@ import namviet.rfid_api.dto.NguyenVatLieuDTO;
 import namviet.rfid_api.service.NguyenVatLieuService;
 import namviet.rfid_api.constant.ResponseObject;
 import namviet.rfid_api.exception.CustomException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -80,6 +84,24 @@ public class NguyenVatLieuAPI {
         } catch (Exception e) {
             e.printStackTrace();
             throw new CustomException("Error updating NguyenVatLieu", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/nguyen-vat-lieu/pagination")
+    public ResponseObject<Page<NguyenVatLieuDTO>> getAllNvlPagination (@RequestParam(defaultValue = "0") int page,
+                                                                       @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "nvlId"));
+            return ResponseObject.<Page<NguyenVatLieuDTO>>builder()
+                    .status(HttpStatus.OK)
+                    .message("Fetched all NguyenVatLieu successfully")
+                    .data(nguyenVatLieuService.getNguyenVatLieuPagination(pageable))
+                    .build();
+        } catch (CustomException a) {
+            throw a;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new CustomException("Error fetching NguyenVatLieu", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

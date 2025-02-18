@@ -1,6 +1,8 @@
 package namviet.rfid_api.service;
 
 import namviet.rfid_api.dto.NguyenVatLieuDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,4 +20,6 @@ public interface NguyenVatLieuService {
     NguyenVatLieuDTO updateNguyenVatLieu(Integer nvlId, NguyenVatLieuDTO nguyenVatLieuDTO);
 
     void deleteNguyenVatLieu(Integer nvlId);
+
+    Page<NguyenVatLieuDTO> getNguyenVatLieuPagination(Pageable pageable);
 }

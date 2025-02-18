@@ -11,6 +11,8 @@ import namviet.rfid_api.mapper.NguyenVatLieuMapper;
 import namviet.rfid_api.repository.NguyenVatLieuRepository;
 import namviet.rfid_api.repository.UserRepository;
 import namviet.rfid_api.service.NguyenVatLieuService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,5 +79,10 @@ public class NguyenVatLieuServiceImpl implements NguyenVatLieuService {
             throw new CustomException("NguyenVatLieu not found with id " + nvlId, HttpStatus.NOT_FOUND);
         }
         nguyenVatLieuRepository.deleteById(nvlId);
+    }
+
+    @Override
+    public Page<NguyenVatLieuDTO> getNguyenVatLieuPagination(Pageable pageable) {
+        return nguyenVatLieuRepository.findAll(pageable).map(nguyenVatLieuMapper::toDTO);
     }
 }
