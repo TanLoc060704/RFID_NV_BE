@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.sql.Date;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -41,4 +43,14 @@ public class DongGoi {
     @ManyToOne
     @JoinColumn(name = "ban_thanh_pham_id", referencedColumnName = "ban_thanh_pham_id")
     BanThanhPham banThanhPham;
+
+    @Column(name = "code", insertable = false )
+    String code;
+
+    @Column(name = "ngay_lap", insertable = false )
+    Date ngayLap;
+
+    @Column(name = "index_cuon")
+    int indexCuon;
+
 }

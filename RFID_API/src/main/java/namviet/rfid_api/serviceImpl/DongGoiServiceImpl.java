@@ -7,6 +7,8 @@ import namviet.rfid_api.exception.CustomException;
 import namviet.rfid_api.mapper.DongGoiMapper;
 import namviet.rfid_api.repository.DongGoiRepository;
 import namviet.rfid_api.service.DongGoiService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -55,5 +57,24 @@ public class DongGoiServiceImpl implements DongGoiService {
             throw new CustomException("DongGoi not found", HttpStatus.NOT_FOUND);
         }
         dongGoiRepository.deleteById(id);
+    }
+
+    @Override
+    public Page<DongGoiDTO> getDongGoiPagination(Pageable pageable) {
+        return dongGoiRepository.findAll(pageable).map(dongGoiMapper::toDTO);
+    }
+
+    @Override
+    public Page<DongGoiDTO> searchWithFTSService(String searchText, Pageable pageable) {
+        Page<DongGoi> dongGoiPage = dongGoiRepository.searchWithFTS(searchText, pageable);
+        return dongGoiPage.map(dongGoiMapper::toDTO);
+    }
+
+    @Override
+    public List<DongGoiDTO> findDongGoiByMaLenh(String MaLenh) {
+        return dongGoiRepository.findByDonHangSanPhamDonHangMaLenhContaining(MaLenh)
+                .stream()
+                .map(dongGoiMapper::toDTO)
+                .collect(Collectors.toList());
     }
 }

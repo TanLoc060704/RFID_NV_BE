@@ -7,6 +7,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.sql.Date;
+
+
 @Data
 @Entity
 @AllArgsConstructor
@@ -43,4 +46,10 @@ public class    DonHang {
     @ManyToOne
     @JoinColumn(name = "khach_hang_id", referencedColumnName = "khach_hang_id")
     KhachHang khachHang;
+
+    @Column(name ="ngay_lap")
+    Date ngayLap;
+
+    @Column(name = "ngay_cap_nhat")
+    Date ngayCapNhat;
 }

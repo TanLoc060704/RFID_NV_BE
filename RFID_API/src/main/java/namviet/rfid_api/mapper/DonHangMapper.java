@@ -9,6 +9,8 @@ import org.mapstruct.Mapping;
 public interface DonHangMapper {
     @Mapping(source = "nhanVien.nhanVienId", target = "nhanVienId")
     @Mapping(source = "khachHang.khachHangId", target = "khachHangId")
+    @Mapping(source = "nhanVien.hoTen", target = "tenNhanVien")
+    @Mapping(source = "khachHang.tenKhachHang", target = "tenKhachHang")
     DonHangDTO toDto(DonHang donHang);
 
     @Mapping(source = "nhanVienId", target = "nhanVien.nhanVienId")

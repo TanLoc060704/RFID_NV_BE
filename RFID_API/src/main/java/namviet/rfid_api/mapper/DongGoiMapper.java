@@ -12,6 +12,11 @@ public interface DongGoiMapper {
     @Mapping(source = "nhanVien.nhanVienId", target = "nhanVienId")
     @Mapping(source = "thietBi.thietBiId", target = "thietBiId")
     @Mapping(source = "banThanhPham.banThanhPhamId",target = "banThanhPhamId")
+    @Mapping(source = "nhanVien.hoTen", target = "tenNhanVien")
+    @Mapping(source = "thietBi.tenMay", target = "tenThietBi")
+    @Mapping(source = "banThanhPham.code", target = "codeBanThanhPham")
+    @Mapping(source = "donHangSanPham.donHang.maLenh", target = "maLenh")
+    @Mapping(source = "donHangSanPham.sanPham.sku", target = "sku")
     DongGoiDTO toDTO(DongGoi dongGoi);
 
     @Mapping(source = "donHangSanPhamId", target = "donHangSanPham.donHangSanPhamId")

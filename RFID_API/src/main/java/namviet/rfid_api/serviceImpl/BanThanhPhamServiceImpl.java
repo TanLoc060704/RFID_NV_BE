@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +25,7 @@ public class BanThanhPhamServiceImpl implements BanThanhPhamService {
     private final BanThanhPhamMapper mapper;
 
     @Override
+    @Transactional
     public BanThanhPhamDTO createBanThanhPham(BanThanhPhamDTO banThanhPhamDTO) {
         BanThanhPham entity = mapper.toEntity(banThanhPhamDTO);
         BanThanhPham savedEntity = repository.save(entity);
