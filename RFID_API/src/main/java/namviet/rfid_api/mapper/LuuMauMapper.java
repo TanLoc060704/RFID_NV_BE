@@ -9,6 +9,7 @@ import org.mapstruct.Mapping;
 public interface LuuMauMapper {
 
     @Mapping(source = "nhanVien.nhanVienId", target = "nhanVienId")
+    @Mapping(source = "nhanVien.hoTen", target = "tenNhanVien")
     LuuMauDTO toDto (LuuMau luuMau);
 
     @Mapping(source = "nhanVienId", target = "nhanVien.nhanVienId")

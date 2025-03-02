@@ -35,4 +35,5 @@ public class LuuMauDTO {
     Integer soLuong;
     Date ngayTao;
     Integer nhanVienId;
+    String tenNhanVien;
 }
