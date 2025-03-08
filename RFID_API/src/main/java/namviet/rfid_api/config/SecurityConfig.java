@@ -26,9 +26,8 @@ public class SecurityConfig {
     private final CustomUserDetailsService userDetailsService;
     private final JwtRequestFilter jwtRequestFilter;
     private final String[] allowedOrigins = {
-//            "http://127.0.0.1:5500",
-            "http://localhost:5173"
-//            "http://localhost:8080"
+            "http://localhost:5173",
+            "http://10.48.97.29:5173/"
     };
 
     public final static String[] nonAuthenticatedUrls = {
