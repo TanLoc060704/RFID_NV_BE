@@ -6,11 +6,15 @@ import namviet.rfid_api.constant.ResponseObject;
 import namviet.rfid_api.dto.DongGoiDTO;
 import namviet.rfid_api.exception.CustomException;
 import namviet.rfid_api.service.DongGoiService;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -131,6 +135,19 @@ public class DongGoiApi {
                     .build();
         } catch (Exception e) {
             throw new CustomException("Error deleting DongGoi", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/export-packing-list")
+    public ResponseEntity<Resource> exportPackingList(@RequestParam("soCuonTrongThung") int soCuonTrongThung, @RequestParam("soPcsTrenCuon") int soPcsTrenCuon, @RequestParam("maLenh") String maLenh) {
+        try {
+            Resource resource = dongGoiService.exportPackingList(soCuonTrongThung,soPcsTrenCuon, maLenh);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=packing_list.xlsx")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(resource);
+        } catch (Exception e) {
+            throw new CustomException("Error exporting packing list", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
