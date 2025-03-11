@@ -187,8 +187,8 @@ public class DongGoiServiceImpl implements DongGoiService {
                 int cellNum = 10;
                 var row = sheet.createRow(rowNum++);
                 row.createCell(0).setCellValue(dongGoi.getIndexCuon());
-                // start index
-                // end index
+                row.createCell(1).setCellValue(dongGoi.getStartIndex());
+                row.createCell(2).setCellValue(dongGoi.getEndIndex());
                 row.createCell(3).setCellValue(dongGoi.getDonHangSanPham().getDonHang().getPo());
                 row.createCell(4).setCellValue(dongGoi.getDonHangSanPham().getSanPham().getUpc().getUpc());
                 row.createCell(5).setCellValue(dongGoi.getDonHangSanPham().getSanPham().getKichThuoc());
@@ -214,6 +214,32 @@ public class DongGoiServiceImpl implements DongGoiService {
             return new ByteArrayResource(out.toByteArray());
         } catch (IOException e) {
             throw new CustomException("Error generating Excel file", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public void createAllDongGoi(String maLenh, int soPcsTrenCuon) {
+        List<DonHangSanPham> donHangSanPhamList = donHangSanPhamRepository.findByDonHangMaLenhContaining(maLenh);
+
+        if(donHangSanPhamList.isEmpty()) {
+            throw new CustomException("DonHangSanPham not found", HttpStatus.NOT_FOUND);
+        }
+
+        for(DonHangSanPham dhsp : donHangSanPhamList) {
+            int soLuong = dhsp.getSoLuong();
+            int soCuon = (int) Math.ceil((double) soLuong / soPcsTrenCuon);
+
+            for (int i = 0; i < soCuon; i++) {
+                DongGoi dongGoi = new DongGoi();
+                int soPcs = (i == soCuon - 1) ? soLuong - (soPcsTrenCuon * i) : soPcsTrenCuon;
+                dongGoi.setSoPcsTot(soPcs);
+                dongGoi.setDonHangSanPham(dhsp);
+                dongGoi.setNhanVien(dhsp.getDonHang().getNhanVien());
+                dongGoi.setIndexCuon(i + 1);
+                dongGoi.setStartIndex(i * soPcsTrenCuon + 1);
+                dongGoi.setEndIndex(i * soPcsTrenCuon + soPcs);
+                dongGoiRepository.save(dongGoi);
+            }
         }
     }
 }

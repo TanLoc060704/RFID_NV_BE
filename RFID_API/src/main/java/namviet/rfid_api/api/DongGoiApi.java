@@ -147,7 +147,21 @@ public class DongGoiApi {
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(resource);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new CustomException("Error exporting packing list", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/create-all-dong-goi")
+    public ResponseObject<?> createAllDongGoi(@RequestParam("maLenh") String maLenh, @RequestParam("soPcsTrenCuon") int soPcsTrenCuon) {
+        try {
+            dongGoiService.createAllDongGoi(maLenh, soPcsTrenCuon);
+            return ResponseObject.builder()
+                    .status(HttpStatus.OK)
+                    .message("Created all DongGoi successfully")
+                    .build();
+        } catch (Exception e) {
+            throw new CustomException("Error creating all DongGoi", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

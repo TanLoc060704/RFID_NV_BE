@@ -31,4 +31,6 @@ public interface DongGoiService {
     List<DongGoiDTO> findDongGoiByMaLenh(String MaLenh);
 
     Resource exportPackingList(int soCuonTrongThung,int soPcsTrenCuon, String maLenh);
+
+    void createAllDongGoi(String maLenh,int soPcsTrenCuon);
 }
