@@ -93,6 +93,10 @@ public class DongGoiServiceImpl implements DongGoiService {
         List<DongGoi> dongGoiList = dongGoiRepository.findByMaLenh(maLenh);
         List<DonHangSanPham> donHangSanPhamList = donHangSanPhamRepository.findByDonHangMaLenhContaining(maLenh);
 
+        if(dongGoiList.isEmpty() || donHangSanPhamList.isEmpty()) {
+            throw new CustomException("DongGoi or DonHangSanPham not found", HttpStatus.NOT_FOUND);
+        }
+
         try (Workbook workbook = new SXSSFWorkbook(100); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
         //Header sheet Roll Packing List Start
             var sheet = workbook.createSheet("Roll Packing List");
@@ -178,7 +182,6 @@ public class DongGoiServiceImpl implements DongGoiService {
                     }
                 }
             }
-
         //Handle data for Box Packing List end
 
         //Handle data for Roll Packing List start
