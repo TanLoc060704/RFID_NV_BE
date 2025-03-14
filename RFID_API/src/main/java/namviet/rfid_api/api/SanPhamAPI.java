@@ -7,12 +7,18 @@ import namviet.rfid_api.constant.ResponseObject;
 import namviet.rfid_api.dto.SanPhamDTO;
 import namviet.rfid_api.exception.CustomException;
 import namviet.rfid_api.service.SanPhamService;
+import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -85,6 +91,56 @@ public class SanPhamAPI {
                     .body(resource);
         } catch (Exception e) {
             throw new CustomException("Error exporting template", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/upload-file-san-pham")
+    public ResponseObject<?> uploadFile(@RequestParam("file") MultipartFile file) {
+        sanPhamService.uploadFile(file);
+        return ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .message("File uploaded successfully")
+                .build();
+    }
+
+    @GetMapping("/pagination")
+    public ResponseObject<?> getSanPhamPagination(@RequestParam(defaultValue = "0") int page,
+                                                  @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "sku"));
+            Page<SanPhamDTO> sanPhamDTOS = sanPhamService.getSanPhamPagination(pageable);
+            return ResponseObject.builder()
+                    .status(HttpStatus.OK)
+                    .message("Fetched all san pham successfully")
+                    .data(sanPhamDTOS)
+                    .build();
+        } catch (CustomException a) {
+            throw a;
+        } catch (Exception e) {
+            throw new CustomException("Error fetching san pham", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/search")
+    public ResponseObject<Page<SanPhamDTO>> searchSPWithFTSService(@RequestParam("searchText") String searchText,
+                                                                   @RequestParam(defaultValue = "0") int page,
+                                                                   @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            String ftsSearch = "\"" + searchText + "*\"";
+            Page<SanPhamDTO> result = (searchText == null || searchText.trim().isEmpty())
+                    ? sanPhamService.getSanPhamPagination(pageable)
+                    : sanPhamService.searchSPWithFTSService(ftsSearch, pageable);
+            return ResponseObject.<Page<SanPhamDTO>>builder()
+                    .status(HttpStatus.OK)
+                    .message("Fetched all san pham successfully")
+                    .data(result)
+                    .build();
+        } catch (CustomException a) {
+            throw a;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new CustomException("Error fetching san pham", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

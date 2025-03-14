@@ -80,10 +80,13 @@ public class BanThanhPhamApi {
         try {
             Pageable pageable = PageRequest.of(page, size);
             String ftsSearchText = "\"" + searchText + "*\"";
+            Page<BanThanhPhamDTO> result = (searchText == null || searchText.trim().isEmpty())
+                    ? banThanhPhamService.getBanThanhPhamPagination(pageable)
+                    : banThanhPhamService.searchWithFTSService(ftsSearchText, pageable);
              return ResponseObject.<Page<BanThanhPhamDTO>>builder()
                     .status(HttpStatus.OK)
                     .message("Fetched all BanThanhPham successfully")
-                    .data(banThanhPhamService.searchWithFTSService(ftsSearchText, pageable))
+                    .data(result)
                     .build();
         } catch (CustomException a) {
             throw a;

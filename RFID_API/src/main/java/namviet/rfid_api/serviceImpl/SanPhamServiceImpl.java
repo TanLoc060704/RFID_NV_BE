@@ -5,12 +5,17 @@ import namviet.rfid_api.dto.SanPhamDTO;
 import namviet.rfid_api.entity.SanPham;
 import namviet.rfid_api.exception.CustomException;
 import namviet.rfid_api.mapper.SanPhamMapper;
+import namviet.rfid_api.repository.KhachHangRepository;
 import namviet.rfid_api.repository.SanPhamRepository;
+import namviet.rfid_api.repository.UpcRepository;
 import namviet.rfid_api.service.SanPhamService;
+import namviet.rfid_api.utils.StringCellValue;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -30,6 +35,8 @@ public class SanPhamServiceImpl implements SanPhamService {
 
     final SanPhamRepository sanPhamRepository;
     final SanPhamMapper sanPhamMapper;
+    final UpcRepository upcRepository;
+    final KhachHangRepository khachHangRepository;
 
     @Override
     public SanPhamDTO createSanPham(SanPhamDTO sanPhamDTO) {
@@ -142,11 +149,34 @@ public class SanPhamServiceImpl implements SanPhamService {
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 var row = sheet.getRow(i);
                 SanPham sanPham = new SanPham();
-
+                sanPham.setSku(StringCellValue.getCellValueAsString(row.getCell(1)));
+                sanPham.setMasp(StringCellValue.getCellValueAsString(row.getCell(2)));
+                sanPham.setUpc(upcRepository.findByUpc(StringCellValue.getCellValueAsString(row.getCell(3)))
+                        .orElseThrow(() -> new CustomException("UPC not found", HttpStatus.BAD_REQUEST)));
+                sanPham.setKhachHang(khachHangRepository.findByTenKhachHang(StringCellValue.getCellValueAsString(row.getCell(4)))
+                        .orElseThrow(() -> new CustomException("Khach Hang not found", HttpStatus.BAD_REQUEST)));
+                sanPham.setHead(StringCellValue.getCellValueAsString(row.getCell(5)));
+                sanPham.setPartition((int) row.getCell(6).getNumericCellValue());
+                sanPham.setFilter((int) row.getCell(7).getNumericCellValue());
+                sanPham.setKichThuoc(StringCellValue.getCellValueAsString(row.getCell(8)));
+                sanPham.setInlay(StringCellValue.getCellValueAsString(row.getCell(9)));
+                sanPham.setNccInlay(StringCellValue.getCellValueAsString(row.getCell(10)));
+                sanPham.setContent(StringCellValue.getCellValueAsString(row.getCell(11)));
                 sanPhamRepository.save(sanPham);
             }
         } catch (Exception e) {
             throw new CustomException("Upload file Error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @Override
+    public Page<SanPhamDTO> getSanPhamPagination(Pageable pageable) {
+        return sanPhamRepository.findAll(pageable).map(sanPhamMapper::toDto);
+    }
+
+    @Override
+    public Page<SanPhamDTO> searchSPWithFTSService(String searchText, Pageable pageable) {
+        Page<SanPham> entities = sanPhamRepository.searchSPWithFTS(searchText,pageable);
+        return entities.map(sanPhamMapper::toDto);
     }
 }

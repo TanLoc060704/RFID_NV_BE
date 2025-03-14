@@ -8,6 +8,10 @@ import namviet.rfid_api.constant.ResponseObject;
 import namviet.rfid_api.dto.UpcDTO;
 import namviet.rfid_api.exception.CustomException;
 import namviet.rfid_api.service.UpcService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -97,6 +101,47 @@ public class UpcApi {
         }
     }
 **/
+
+    @GetMapping("/pagination")
+    public ResponseObject<?> getPagination(@RequestParam(defaultValue = "0") Integer page,
+                                           @RequestParam(defaultValue = "10") Integer size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC,"upcId"));
+            return ResponseObject.builder()
+                    .status(HttpStatus.OK)
+                    .message("Fetched Upc pagination successfully")
+                    .data(upcService.getUpcPagination(pageable))
+                    .build();
+        } catch (CustomException a) {
+            throw a;
+        } catch (Exception e) {
+            throw new CustomException("Error fetching Upc", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/search")
+    public ResponseObject<Page<UpcDTO>> searchWithFTS(@RequestParam(defaultValue = "0") int page,
+                                                       @RequestParam(defaultValue = "10") int size,
+                                                       @RequestParam("searchText") String searchText) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            String ftsSearchText = "\"" + searchText + "*\"";
+            Page<UpcDTO> result = (searchText == null || searchText.trim().isEmpty())
+                    ? upcService.getUpcPagination(pageable)
+                    : upcService.searchUpcWithFTSService(ftsSearchText, pageable);
+
+            return ResponseObject.<Page<UpcDTO>>builder()
+                    .status(HttpStatus.OK)
+                    .message("Fetched all Upc successfully")
+                    .data(result)
+                    .build();
+        } catch (CustomException a) {
+            throw a;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new CustomException("Error fetching Upc", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     @ExceptionHandler(CustomException.class)
     public ResponseObject<?> handleCustomException(CustomException e) {
