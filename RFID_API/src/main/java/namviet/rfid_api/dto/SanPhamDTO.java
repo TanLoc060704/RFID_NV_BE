@@ -15,13 +15,16 @@ public class SanPhamDTO {
     Integer partition;
     Integer filter;
 //    Long serial;
-//    String upc;
-//    int upcId;
-    UpcDTO upcDTO;
+    String upc;
+    int upcId;
+//    UpcDTO upcDTO;
+    String masp;
     String head;
     String content;
 
     String kichThuoc;
     String inlay;
     String nccInlay;
+    int khachHangId;
+    String tenKhachHang;
 }

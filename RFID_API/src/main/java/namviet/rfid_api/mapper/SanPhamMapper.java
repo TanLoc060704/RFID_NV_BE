@@ -9,9 +9,15 @@ import org.mapstruct.factory.Mappers;
 @Mapper(componentModel = "spring", uses = UpcMapper.class)
 public interface SanPhamMapper {
 
-    @Mapping(source = "upc",target = "upcDTO")
+//    @Mapping(source = "upc",target = "upcDTO")
+    @Mapping(source = "upc.upcId",target = "upcId")
+    @Mapping(source = "upc.upc",target = "upc")
+    @Mapping(source = "khachHang.khachHangId",target = "khachHangId")
+    @Mapping(source = "khachHang.tenKhachHang",target = "tenKhachHang")
     SanPhamDTO toDto(SanPham sanPham);
 
-    @Mapping(source = "upcDTO",target = "upc")
+//    @Mapping(source = "upcDTO",target = "upc")
+    @Mapping(source = "upcId",target = "upc.upcId")
+    @Mapping(source = "khachHangId",target = "khachHang.khachHangId")
     SanPham toEntity(SanPhamDTO sanPhamDTO);
 }

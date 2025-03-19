@@ -24,4 +24,7 @@ public class DongGoiDTO {
     String code;
     Date ngayLap;
     int indexCuon;
+    int startIndex;
+    int endIndex;
+    boolean status;
 }

@@ -46,8 +46,14 @@ public class SanPham {
     @Column(name = "ncc_inlay", length = 50)
     String nccInlay;
 
+    @Column(name = "masp", length = 50)
+    String masp;
+
     @ManyToOne
     @JoinColumn(name = "upc_id")
     Upc upc;
 
+    @ManyToOne
+    @JoinColumn(name = "khach_hang_id")
+    KhachHang khachHang;
 }

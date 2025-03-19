@@ -53,4 +53,12 @@ public class DongGoi {
     @Column(name = "index_cuon")
     int indexCuon;
 
+    @Column(name = "start_index")
+    int startIndex;
+
+    @Column(name = "end_index")
+    int endIndex;
+
+    @Column(name = "status", columnDefinition = "int default 0")
+    boolean status = false;
 }

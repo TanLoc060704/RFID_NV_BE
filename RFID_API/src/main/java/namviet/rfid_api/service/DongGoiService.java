@@ -1,6 +1,7 @@
 package namviet.rfid_api.service;
 
 import namviet.rfid_api.dto.DongGoiDTO;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,4 +29,8 @@ public interface DongGoiService {
     Page<DongGoiDTO> searchWithFTSService(String searchText, Pageable pageable);
 
     List<DongGoiDTO> findDongGoiByMaLenh(String MaLenh);
+
+    Resource exportPackingList(int soCuonTrongThung,int soPcsTrenCuon, String maLenh);
+
+    void createAllDongGoi(String maLenh,int soPcsTrenCuon);
 }
