@@ -43,6 +43,17 @@ public class DonHangSanPhamAPI {
                 .build();
     }
 
+    @PostMapping("/them-san-pham-file")
+    public ResponseObject<?> themSanPhamVaoDonHangFile(@RequestParam("file") MultipartFile file) {
+//        List<DonHangSanPhamDTO> dsDonHangSanPham = donHangSanPhamService.themSPVaoDonHangFile(file);
+        return ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .message("Thêm sản phẩm vào đơn hàng thành công")
+                .data(null)
+                .build();
+    }
+
+
     @PutMapping("/cap-nhat-don-hang-san-pham")
     public ResponseObject<?> capNhatDonHangSanPham(@RequestBody DonHangSanPhamDTO donHangSanPham) {
         DonHangSanPhamDTO donHangSanPhamNew = donHangSanPhamService.capNhatDonHangSanPham(donHangSanPham);

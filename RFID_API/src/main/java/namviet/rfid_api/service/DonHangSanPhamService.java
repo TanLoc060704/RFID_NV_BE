@@ -18,6 +18,6 @@ public interface DonHangSanPhamService {
     Optional<DonHangSanPhamDTO> timDonHangSanPham(int donHangSanPhamId);
     Optional<List<DonHangSanPhamDTO>> timDonHangTheoDonHangId(int donHangId);
     List<DonHangSanPhamDTO> importFile (List<MultipartFile> dsFileImport, String maLenh, String sku, int viTriEPC);
-
+    List<DonHangSanPhamDTO> themSPVaoDonHangFile(MultipartFile multipartFile);
 
 }

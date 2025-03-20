@@ -205,6 +205,25 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<DonHangSanPhamDTO> themSPVaoDonHangFile(MultipartFile multipartFile) {
+        String fileName = multipartFile.getOriginalFilename();
+        boolean isXlsx = fileName != null && fileName.endsWith(".xlsx");
+        boolean isXls = fileName != null && fileName.endsWith(".xls");
+
+        if (!isXls && !isXlsx) {
+            throw new CustomException("File không đúng định dạng (.xls,.xlsx)", HttpStatus.BAD_REQUEST);
+        }
+
+        try (InputStream inputStream = multipartFile.getInputStream();
+            Workbook workbook = isXlsx ? new XSSFWorkbook(inputStream) : new HSSFWorkbook(inputStream)) {
+
+        } catch (Exception e) {
+            throw new CustomException("Lỗi khi đọc file: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+        return null;
+    }
+
     private DonHangSanPham readFileExcelExportDonHangSanPham(MultipartFile multipartFile, DonHang donHang, SanPham sanPham, int viTriEPC) {
         listDuLieu = new ArrayList<>();
         String fileName = multipartFile.getOriginalFilename();
