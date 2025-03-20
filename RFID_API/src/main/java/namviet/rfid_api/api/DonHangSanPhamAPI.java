@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import namviet.rfid_api.constant.ResponseObject;
 import namviet.rfid_api.dto.DonHangSanPhamDTO;
+import namviet.rfid_api.dto.SanPhamDTO;
 import namviet.rfid_api.exception.CustomException;
 import namviet.rfid_api.service.DonHangSanPhamService;
 import org.springframework.http.HttpStatus;
@@ -44,12 +45,12 @@ public class DonHangSanPhamAPI {
     }
 
     @PostMapping("/them-san-pham-file")
-    public ResponseObject<?> themSanPhamVaoDonHangFile(@RequestParam("file") MultipartFile file) {
-//        List<DonHangSanPhamDTO> dsDonHangSanPham = donHangSanPhamService.themSPVaoDonHangFile(file);
+    public ResponseObject<?> themSanPhamVaoDonHangFile(@RequestParam("file") MultipartFile file, @RequestParam("ma-lenh") String maLenh) {
+        List<DonHangSanPhamDTO> dsDonHangSanPham = donHangSanPhamService.themSPVaoDonHangFile(file,maLenh);
         return ResponseObject.builder()
                 .status(HttpStatus.OK)
                 .message("Thêm sản phẩm vào đơn hàng thành công")
-                .data(null)
+                .data(dsDonHangSanPham)
                 .build();
     }
 
@@ -98,6 +99,16 @@ public class DonHangSanPhamAPI {
         } catch (Exception e) {
             throw new CustomException(e.getMessage(), HttpStatus.BAD_REQUEST) ;
         }
+    }
+
+    @PostMapping("/them-mot-san-pham-vao-don-hang")
+    public ResponseObject<?> themMotSanPhamVaoDonHang(@RequestParam("sku") String sku, @RequestParam("ma-lenh") String maLenh, @RequestParam("so-luong") int soLuong) {
+        DonHangSanPhamDTO donHangSanPham = donHangSanPhamService.themMotSanPhamVaoDonHang(sku,maLenh,soLuong);
+        return ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .message("Thêm sản phẩm vào đơn hàng thành công")
+                .data(donHangSanPham)
+                .build();
     }
 
     @ExceptionHandler(CustomException.class)

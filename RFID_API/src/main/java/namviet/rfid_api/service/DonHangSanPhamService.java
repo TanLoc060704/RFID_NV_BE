@@ -1,6 +1,7 @@
 package namviet.rfid_api.service;
 
 import namviet.rfid_api.dto.DonHangSanPhamDTO;
+import namviet.rfid_api.dto.SanPhamDTO;
 import namviet.rfid_api.entity.SanPham;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,6 +19,6 @@ public interface DonHangSanPhamService {
     Optional<DonHangSanPhamDTO> timDonHangSanPham(int donHangSanPhamId);
     Optional<List<DonHangSanPhamDTO>> timDonHangTheoDonHangId(int donHangId);
     List<DonHangSanPhamDTO> importFile (List<MultipartFile> dsFileImport, String maLenh, String sku, int viTriEPC);
-    List<DonHangSanPhamDTO> themSPVaoDonHangFile(MultipartFile multipartFile);
-
+    List<DonHangSanPhamDTO> themSPVaoDonHangFile(MultipartFile multipartFile, String maLenh);
+    DonHangSanPhamDTO themMotSanPhamVaoDonHang(String sku, String maLenh, int soLuong);
 }
