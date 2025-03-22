@@ -187,6 +187,7 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
                 if (exists) {
                     throw new CustomException("File with the same name already exists: " + donHangSanPham.getTenFile(),HttpStatus.BAD_REQUEST);
                 }
+                donHangSanPham.setSoLanTao(1);
 
                 DonHangSanPham savedDhSp =  donHangSanPhamRepository.save(donHangSanPham);
                 dsDonHangSanPham.add(savedDhSp);

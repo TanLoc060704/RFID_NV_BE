@@ -30,4 +30,7 @@ public class DonHangSanPham {
     @Column(name = "so_luong", nullable = false)
     Integer soLuong;
 
+    @Column(name = "so_lan_tao_data", nullable = false)
+    Integer soLanTao;
+
 }

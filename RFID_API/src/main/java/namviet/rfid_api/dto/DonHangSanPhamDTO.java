@@ -13,4 +13,5 @@ public class DonHangSanPhamDTO {
     DonHangDTO donHang;
     String  tenFile;
     Integer soLuong;
+    Integer soLanTao;
 }
