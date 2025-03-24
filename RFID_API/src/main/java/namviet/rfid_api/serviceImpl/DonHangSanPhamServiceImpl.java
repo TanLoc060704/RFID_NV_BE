@@ -24,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -141,12 +142,15 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
 
 
     private String taoTenFile(SanPhamDTO sanPham) {
+        return taoTenFile(sanPham, 0);
+    }
+
+    private String taoTenFile(SanPhamDTO sanPham, int index) {
         if (sanPham == null || sanPham.getSku() == null) {
             throw new IllegalArgumentException("SanPham or SKU cannot be null");
         }
 
         Date date = new Date();
-
         SimpleDateFormat dateFormat = new SimpleDateFormat("ddMMyyyy");
         SimpleDateFormat timeFormat = new SimpleDateFormat("HHmmss");
 
@@ -154,10 +158,11 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
         String ngayThang = dateFormat.format(date);
         String thoiGian = timeFormat.format(date);
 
-        String tenFile = sku +"-"+ ngayThang + "-" + thoiGian+".xlsx";
-
-
-        return tenFile;
+        String baseFileName = sku + "-" + ngayThang + "-" + thoiGian;
+        if (index > 0) {
+            baseFileName += " (" + index + ")";
+        }
+        return baseFileName + ".xlsx";
     }
     private List<Dulieu> listDuLieu ;
 
@@ -182,6 +187,7 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
                 if (exists) {
                     throw new CustomException("File with the same name already exists: " + donHangSanPham.getTenFile(),HttpStatus.BAD_REQUEST);
                 }
+                donHangSanPham.setSoLanTao(1);
 
                 DonHangSanPham savedDhSp =  donHangSanPhamRepository.save(donHangSanPham);
                 dsDonHangSanPham.add(savedDhSp);
@@ -203,6 +209,109 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
         return dsDonHangSanPham.stream()
                 .map(donHangSanPhamMapper::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public List<DonHangSanPhamDTO> themSPVaoDonHangFile(MultipartFile multipartFile, String maLenh) {
+        if (maLenh == null || maLenh.isEmpty()) {
+            throw new CustomException("Mã lệnh không được để trống", HttpStatus.BAD_REQUEST);
+        }
+
+        String fileName = multipartFile.getOriginalFilename();
+        boolean isXlsx = fileName != null && fileName.endsWith(".xlsx");
+        boolean isXls = fileName != null && fileName.endsWith(".xls");
+
+        if (!isXls && !isXlsx) {
+            throw new CustomException("File không đúng định dạng (.xls,.xlsx)", HttpStatus.BAD_REQUEST);
+        }
+
+        DonHang donHang = donHangRepository.findByMaLenh(maLenh);
+        if (donHang == null) {
+            throw new CustomException("Không tìm thấy đơn hàng với mã lệnh: " + maLenh, HttpStatus.BAD_REQUEST);
+        }
+
+        List<DonHangSanPham> donHangSanPhams = new ArrayList<>();
+        try (InputStream inputStream = multipartFile.getInputStream();
+             Workbook workbook = isXlsx ? new XSSFWorkbook(inputStream) : new HSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            for (int i = 1; i <= sheet.getPhysicalNumberOfRows(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                Cell skuCell = row.getCell(1);
+                Cell quantityCell = row.getCell(2);
+
+                if (skuCell == null || quantityCell == null) {
+                    throw new CustomException("Dữ liệu không hợp lệ tại dòng: " + (i + 1), HttpStatus.BAD_REQUEST);
+                }
+
+                String sku = skuCell.getStringCellValue();
+                SanPham sanPham = sanPhamRepository.findBySku(sku);
+                if (sanPham == null) {
+                    throw new CustomException("Không tìm thấy sản phẩm với SKU: " + sku, HttpStatus.BAD_REQUEST);
+                }
+
+                int soLuong = (int) quantityCell.getNumericCellValue();
+                if (soLuong <= 0) {
+                    throw new CustomException("Số lượng không hợp lệ tại dòng: " + (i + 1), HttpStatus.BAD_REQUEST);
+                }
+
+                DonHangSanPham donHangSanPham = new DonHangSanPham();
+                donHangSanPham.setDonHang(donHang);
+                donHangSanPham.setSanPham(sanPham);
+                donHangSanPham.setSoLuong(soLuong);
+                String tenFile = taoTenFile(sanPhamMapper.toDto(sanPham));
+
+                int index = 1;
+                while (donHangSanPhamRepository.existsByTenFile(tenFile)) {
+                    tenFile = taoTenFile(sanPhamMapper.toDto(sanPham), index);
+                    index++;
+                }
+                donHangSanPham.setTenFile(tenFile);
+                donHangSanPhams.add(donHangSanPham);
+                donHangSanPhamRepository.save(donHangSanPham);
+            }
+
+
+
+        } catch (IOException e) {
+            throw new CustomException("Lỗi khi đọc file: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            throw new CustomException("Lỗi không xác định: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return donHangSanPhams.stream()
+                .map(donHangSanPhamMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public DonHangSanPhamDTO themMotSanPhamVaoDonHang(String sku, String maLenh, int soLuong) {
+        if (maLenh == null || maLenh.isEmpty()) {
+            throw new CustomException("Mã lệnh không được để trống", HttpStatus.BAD_REQUEST);
+        }
+        SanPham sanPham = sanPhamRepository.findBySku(sku);
+        if (sku == null || sanPham == null) {
+            throw new CustomException("Sản phẩm không hợp lệ", HttpStatus.BAD_REQUEST);
+        }
+
+        DonHang donHang = donHangRepository.findByMaLenh(maLenh);
+        if (donHang == null) {
+            throw new CustomException("Không tìm thấy đơn hàng với mã lệnh: " + maLenh, HttpStatus.BAD_REQUEST);
+        }
+
+
+
+        DonHangSanPham donHangSanPham = new DonHangSanPham();
+        donHangSanPham.setDonHang(donHang);
+        donHangSanPham.setSanPham(sanPham);
+        donHangSanPham.setSoLuong(soLuong);
+        String tenFile = taoTenFile(sanPhamMapper.toDto(sanPham));
+        donHangSanPham.setTenFile(tenFile);
+        return donHangSanPhamMapper.toDTO(donHangSanPhamRepository.save(donHangSanPham));
     }
 
     private DonHangSanPham readFileExcelExportDonHangSanPham(MultipartFile multipartFile, DonHang donHang, SanPham sanPham, int viTriEPC) {

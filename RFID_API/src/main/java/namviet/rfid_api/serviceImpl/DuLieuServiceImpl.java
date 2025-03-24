@@ -3,6 +3,7 @@ package namviet.rfid_api.serviceImpl;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import namviet.rfid_api.dto.FileResourceDTO;
 import namviet.rfid_api.entity.DonHangSanPham;
 import namviet.rfid_api.entity.Dulieu;
 import namviet.rfid_api.entity.SanPham;
@@ -17,14 +18,19 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import static namviet.rfid_api.utils.Encoder.taoEPCtheoChuanGS1;
@@ -32,6 +38,7 @@ import static namviet.rfid_api.utils.Encoder.taoEPCtheoChuanGS1;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Transactional
 public class DuLieuServiceImpl implements DuLieuService {
 
     final DonHangSanPhamRepository donHangSanPhamRepository;
@@ -96,6 +103,340 @@ public class DuLieuServiceImpl implements DuLieuService {
             throw new CustomException("epc null",HttpStatus.BAD_REQUEST);
         }
         return Decoder.epcToDulieu(epc);
+    }
+
+
+    @Override
+    @Transactional
+    public List<FileResourceDTO> downloadFile(int donHangSanPhamID) {
+        if (donHangSanPhamID < 0) {
+            throw new CustomException("don Hang San Pham Id Null", HttpStatus.BAD_REQUEST);
+        }
+        List<DonHangSanPham> dsDonHangSanPham = donHangSanPhamRepository.findByDonHangDonHangId(donHangSanPhamID);
+
+        if (dsDonHangSanPham.size() <= 0) {
+            throw new CustomException("Id Don Hang Khong Ton Tai", HttpStatus.BAD_REQUEST);
+        }
+
+        List<FileResourceDTO> resources = new ArrayList<>();
+
+        for (DonHangSanPham donHangSanPham : dsDonHangSanPham) {
+            SanPham sanPham = donHangSanPham.getSanPham();
+            int soLuong = donHangSanPham.getSoLuong() + soLuongThem(donHangSanPham.getSoLuong());
+
+            List<Dulieu> dulieus = new ArrayList<>();
+            List<Upc> upcList = new ArrayList<>();
+
+            String contents = sanPham.getContent();
+            String[] content = contents.split("\\|");
+
+            for (int i = 0; i < soLuong; i++) {
+                long serial = sanPham.getUpc().getSerial();
+                String epc = taoEPCtheoChuanGS1(sanPham);
+
+                SanPham sanPhamDecoder = Decoder.epcToDulieu(epc);
+
+                Dulieu dulieu = new Dulieu(epc, sanPham.getSku(), sanPham, donHangSanPham.getDonHang(), donHangSanPham);
+                Upc upcExcel = new Upc(sanPhamDecoder.getUpc().getUpc(), sanPhamDecoder.getUpc().getSerial());
+
+                try {
+                    duLieuRepository.save(dulieu);
+                    dulieus.add(dulieu);
+                    upcList.add(upcExcel);
+                    serial += 1;
+                    sanPham.getUpc().setSerial(serial);
+                } catch (Exception e) {
+                    throw new CustomException(String.valueOf(e), HttpStatus.BAD_REQUEST);
+                }
+
+                if (i == soLuong - 1) {
+                    Upc upcSave = new Upc(sanPham.getUpc().getUpcId(), sanPham.getUpc().getUpc(), serial);
+                    updateSerial(upcSave);
+                }
+            }
+
+            String fileName = donHangSanPham.getTenFile();
+            ByteArrayResource resource = exportToExcelInMemory(fileName, dulieus, upcList, content);
+            FileResourceDTO fileResourceDTO = new FileResourceDTO();
+            fileResourceDTO.setFileName(fileName);
+            fileResourceDTO.setFileContent(Base64.getEncoder().encodeToString(resource.getByteArray()));
+            resources.add(fileResourceDTO);
+            donHangSanPhamRepository.updateSoLanTao(donHangSanPham.getDonHangSanPhamId());
+        }
+        return resources;
+    }
+
+    @Override
+    public FileResourceDTO downloadFileByDonHangSanPhamId(int donHangSanPhamID) {
+        if (donHangSanPhamID < 0) {
+            throw new CustomException("don Hang San Pham Id Null", HttpStatus.BAD_REQUEST);
+        }
+        DonHangSanPham donHangSanPham = donHangSanPhamRepository.findByDonHangSanPhamId(donHangSanPhamID)
+                .orElseThrow(() -> new CustomException("Id Don Hang Khong Ton Tai", HttpStatus.BAD_REQUEST));
+
+        SanPham sanPham = donHangSanPham.getSanPham();
+        int soLuong = donHangSanPham.getSoLuong() + soLuongThem(donHangSanPham.getSoLuong());
+
+        List<Dulieu> dulieus = new ArrayList<>();
+        List<Upc> upcList = new ArrayList<>();
+
+        String contents = sanPham.getContent();
+        String[] content = contents.split("\\|");
+
+        for (int i = 0; i < soLuong; i++) {
+            long serial = sanPham.getUpc().getSerial();
+            String epc = taoEPCtheoChuanGS1(sanPham);
+
+            SanPham sanPhamDecoder = Decoder.epcToDulieu(epc);
+
+            Dulieu dulieu = new Dulieu(epc, sanPham.getSku(), sanPham, donHangSanPham.getDonHang(), donHangSanPham);
+            Upc upcExcel = new Upc(sanPhamDecoder.getUpc().getUpc(), sanPhamDecoder.getUpc().getSerial());
+
+            try {
+                duLieuRepository.save(dulieu);
+                dulieus.add(dulieu);
+                upcList.add(upcExcel);
+                serial += 1;
+                sanPham.getUpc().setSerial(serial);
+            } catch (Exception e) {
+                throw new CustomException(String.valueOf(e), HttpStatus.BAD_REQUEST);
+            }
+
+            if (i == soLuong - 1) {
+                Upc upcSave = new Upc(sanPham.getUpc().getUpcId(), sanPham.getUpc().getUpc(), serial);
+                updateSerial(upcSave);
+            }
+        }
+
+        String fileName = donHangSanPham.getTenFile();
+        ByteArrayResource resource = exportToExcelInMemory(fileName, dulieus, upcList, content);
+        FileResourceDTO fileResourceDTO = new FileResourceDTO();
+        fileResourceDTO.setFileName(fileName);
+        fileResourceDTO.setFileContent(Base64.getEncoder().encodeToString(resource.getByteArray()));
+        donHangSanPhamRepository.updateSoLanTao(donHangSanPham.getDonHangSanPhamId());
+        return fileResourceDTO;
+    }
+
+    @Override
+    public List<FileResourceDTO> downloadListFileSerialByDonHangSanPhamId(int donHangID) {
+        if (donHangID < 0) {
+            throw new CustomException("don Hang San Pham Id Null", HttpStatus.BAD_REQUEST);
+        }
+        List<DonHangSanPham> dsDonHangSanPham = donHangSanPhamRepository.findByDonHangDonHangId(donHangID);
+
+        if (dsDonHangSanPham.size() <= 0) {
+            throw new CustomException("Id Don Hang Khong Ton Tai", HttpStatus.BAD_REQUEST);
+        }
+
+        List<FileResourceDTO> resources = new ArrayList<>();
+        for (DonHangSanPham donHangSanPham : dsDonHangSanPham) {
+            SanPham sanPham = donHangSanPham.getSanPham();
+            int soLuong = donHangSanPham.getSoLuong() + soLuongThem(donHangSanPham.getSoLuong());
+
+            List<Dulieu> dulieus = new ArrayList<>();
+            List<Upc> upcList = new ArrayList<>();
+
+            String contents = sanPham.getContent();
+            String[] content = contents.split("\\|");
+            for (int i = 0; i < soLuong; i++) {
+                long serial = sanPham.getUpc().getSerial();
+                String epc = sanPham.getUpc().getUpc() + String.format("%010d", serial);
+
+                Dulieu dulieu = new Dulieu(epc, sanPham.getSku(), sanPham, donHangSanPham.getDonHang(), donHangSanPham);
+                Upc upcExcel = new Upc(sanPham.getUpc().getUpc(), sanPham.getUpc().getSerial());
+
+                try {
+                    duLieuRepository.save(dulieu);
+                    dulieus.add(dulieu);
+                    upcList.add(upcExcel);
+                    serial += 1;
+                    sanPham.getUpc().setSerial(serial);
+                } catch (Exception e) {
+                    throw new CustomException(String.valueOf(e), HttpStatus.BAD_REQUEST);
+                }
+            }
+            String fileName = donHangSanPham.getTenFile();
+            ByteArrayResource resource = exportToExcelInMemory(fileName, dulieus, upcList, content);
+            FileResourceDTO fileResourceDTO = new FileResourceDTO();
+            fileResourceDTO.setFileName(fileName);
+            fileResourceDTO.setFileContent(Base64.getEncoder().encodeToString(resource.getByteArray()));
+            resources.add(fileResourceDTO);
+            donHangSanPhamRepository.updateSoLanTao(donHangSanPham.getDonHangSanPhamId());
+        }
+
+        return resources;
+    }
+
+    @Override
+    public FileResourceDTO downloadFileSerialByDonHangSanPhamId(int donHangSanPhamID) {
+        if (donHangSanPhamID < 0) {
+            throw new CustomException("don Hang San Pham Id Null", HttpStatus.BAD_REQUEST);
+        }
+        DonHangSanPham donHangSanPham = donHangSanPhamRepository.findByDonHangSanPhamId(donHangSanPhamID)
+                .orElseThrow(() -> new CustomException("Id Don Hang Khong Ton Tai", HttpStatus.BAD_REQUEST));
+
+        SanPham sanPham = donHangSanPham.getSanPham();
+        int soLuong = donHangSanPham.getSoLuong() + soLuongThem(donHangSanPham.getSoLuong());
+
+        List<Dulieu> dulieus = new ArrayList<>();
+        List<Upc> upcList = new ArrayList<>();
+
+        String contents = sanPham.getContent();
+        String[] content = contents.split("\\|");
+        for (int i = 0; i < soLuong; i++) {
+            long serial = sanPham.getUpc().getSerial();
+            String epc = sanPham.getUpc().getUpc() + String.format("%010d", serial);
+
+            Dulieu dulieu = new Dulieu(epc, sanPham.getSku(), sanPham, donHangSanPham.getDonHang(), donHangSanPham);
+            Upc upcExcel = new Upc(sanPham.getUpc().getUpc(), sanPham.getUpc().getSerial());
+
+            try {
+                duLieuRepository.save(dulieu);
+                dulieus.add(dulieu);
+                upcList.add(upcExcel);
+                serial += 1;
+                sanPham.getUpc().setSerial(serial);
+            } catch (Exception e) {
+                throw new CustomException(String.valueOf(e), HttpStatus.BAD_REQUEST);
+            }
+        }
+        String fileName = donHangSanPham.getTenFile();
+        ByteArrayResource resource = exportToExcelInMemory(fileName, dulieus, upcList, content);
+        FileResourceDTO fileResourceDTO = new FileResourceDTO();
+        fileResourceDTO.setFileName(fileName);
+        fileResourceDTO.setFileContent(Base64.getEncoder().encodeToString(resource.getByteArray()));
+        donHangSanPhamRepository.updateSoLanTao(donHangSanPham.getDonHangSanPhamId());
+        return fileResourceDTO;
+
+    }
+
+    @Override
+    public List<FileResourceDTO> downloadFileListHexByDonHangSanPhamId(int donHangSanPhamID) {
+        if (donHangSanPhamID < 0) {
+            throw new CustomException("don Hang San Pham Id Null", HttpStatus.BAD_REQUEST);
+        }
+        List<DonHangSanPham> dsDonHangSanPham = donHangSanPhamRepository.findByDonHangDonHangId(donHangSanPhamID);
+
+        if (dsDonHangSanPham.size() <= 0) {
+            throw new CustomException("Id Don Hang Khong Ton Tai", HttpStatus.BAD_REQUEST);
+        }
+
+        List<FileResourceDTO> resources = new ArrayList<>();
+        for (DonHangSanPham donHangSanPham : dsDonHangSanPham) {
+            List<Dulieu> dulieus = duLieuRepository.findByDonHangSanPhamDonHangSanPhamId(donHangSanPham.getDonHangSanPhamId());
+
+            String fileName = donHangSanPham.getTenFile();
+            ByteArrayResource resource = exportToExcelInMemoryHex(fileName, dulieus);
+            FileResourceDTO fileResourceDTO = new FileResourceDTO();
+            fileResourceDTO.setFileName(fileName);
+            fileResourceDTO.setFileContent(Base64.getEncoder().encodeToString(resource.getByteArray()));
+            resources.add(fileResourceDTO);
+            donHangSanPhamRepository.updateSoLanTao(donHangSanPham.getDonHangSanPhamId());
+        }
+        return resources;
+    }
+
+    @Override
+    public FileResourceDTO downloadFileHexByDonHangSanPhamId(int donHangSanPhamID) {
+        if (donHangSanPhamID < 0) {
+            throw new CustomException("don Hang San Pham Id Null", HttpStatus.BAD_REQUEST);
+        }
+        DonHangSanPham donHangSanPham = donHangSanPhamRepository.findByDonHangSanPhamId(donHangSanPhamID)
+                .orElseThrow(() -> new CustomException("Id Don Hang Khong Ton Tai", HttpStatus.BAD_REQUEST));
+
+
+        List<Dulieu> dulieus = duLieuRepository.findByDonHangSanPhamDonHangSanPhamId(donHangSanPham.getDonHangSanPhamId());
+
+        String fileName = donHangSanPham.getTenFile();
+        ByteArrayResource resource = exportToExcelInMemoryHex(fileName, dulieus);
+        FileResourceDTO fileResourceDTO = new FileResourceDTO();
+        fileResourceDTO.setFileName(fileName);
+        fileResourceDTO.setFileContent(Base64.getEncoder().encodeToString(resource.getByteArray()));
+        donHangSanPhamRepository.updateSoLanTao(donHangSanPham.getDonHangSanPhamId());
+
+        return fileResourceDTO;
+    }
+
+    private ByteArrayResource exportToExcelInMemoryHex(String fileName, List<Dulieu> dulieus) {
+        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            XSSFSheet sheet = workbook.createSheet("Data");
+
+            // Determine the maximum length of the content arrays
+            int maxContentLength = dulieus.stream()
+                    .mapToInt(dulieu -> dulieu.getNoiDungBienDoi().split("\\|").length)
+                    .max()
+                    .orElse(0);
+
+            // Create the header row
+            Row headerRow = sheet.createRow(0);
+            headerRow.createCell(0).setCellValue("STT");
+            headerRow.createCell(1).setCellValue("EPC Converted");
+            headerRow.createCell(2).setCellValue("Data Góc");
+
+            for (int i = 0; i < maxContentLength; i++) {
+                headerRow.createCell(3 + i).setCellValue("Content " + (i + 1));
+            }
+
+            int rowNum = 1;
+
+            for (int i = 0; i < dulieus.size(); i++) {
+                Row row = sheet.createRow(rowNum++);
+
+                Dulieu dulieu = dulieus.get(i);
+
+                String contents = dulieu.getNoiDungBienDoi();
+                String[] content = contents.split("\\|");
+
+                row.createCell(0).setCellValue(rowNum - 1);
+                row.createCell(1).setCellValue(dulieu.getEpc());
+                row.createCell(2).setCellValue(dulieu.getDataGoc());
+
+                for (int j = 0; j < content.length; j++) {
+                    row.createCell(3 + j).setCellValue(content[j]);
+                }
+            }
+
+            workbook.write(out);
+            return new ByteArrayResource(out.toByteArray());
+        } catch (IOException e) {
+            throw new CustomException("Lỗi khi ghi file Excel: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    private ByteArrayResource exportToExcelInMemory(String fileName, List<Dulieu> data, List<Upc> upcs, String[] content) {
+        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            XSSFSheet sheet = workbook.createSheet("Data");
+
+            String[] columns = {"STT", "EPC", "UPC", "Serial"};
+
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < columns.length + content.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(i < columns.length ? columns[i] : "Content " + (i - columns.length + 1));
+            }
+
+            int rowNum = 1;
+            for (int i = 0; i < data.size(); i++) {
+                Row row = sheet.createRow(rowNum++);
+
+                Dulieu dulieu = data.get(i);
+                Upc upc = i < upcs.size() ? upcs.get(i) : null;
+
+                row.createCell(0).setCellValue(rowNum - 1);
+                row.createCell(1).setCellValue(dulieu.getEpc());
+                row.createCell(2).setCellValue(upc != null ? upc.getUpc() : "N/A");
+                row.createCell(3).setCellValue(upc != null ? String.valueOf(upc.getSerial()) : "N/A");
+
+                for (int j = 0; j < content.length; j++) {
+                    row.createCell(columns.length + j).setCellValue(content[j]);
+                }
+            }
+
+            workbook.write(out);
+            return new ByteArrayResource(out.toByteArray());
+        } catch (IOException e) {
+            throw new CustomException("Lỗi khi ghi file Excel: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
     /**
