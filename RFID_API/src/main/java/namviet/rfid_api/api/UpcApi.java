@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -141,6 +142,15 @@ public class UpcApi {
             e.printStackTrace();
             throw new CustomException("Error fetching Upc", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @PostMapping("/upload-file-nhieu-upc")
+    public ResponseObject<?> uploadFile(@RequestParam("file") MultipartFile file) {
+        upcService.uploadFile(file);
+        return ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .message("File uploaded successfully")
+                .build();
     }
 
     @ExceptionHandler(CustomException.class)
