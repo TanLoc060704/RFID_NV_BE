@@ -33,24 +33,18 @@ public class NhanVienApi {
         return nhanVienService.findById(id);
     }
 
-    /**
+
     @PostMapping
     public ResponseObject<NhanVienDTO> create(@RequestBody NhanVienDTO nhanVienDTO) {
         return nhanVienService.create(nhanVienDTO);
     }
-    **/
+
 
     @PutMapping("/{id}")
     public ResponseObject<NhanVienDTO> update(@PathVariable Integer id, @RequestBody NhanVienDTO nhanVienDTO) {
         return nhanVienService.update(id, nhanVienDTO);
     }
 
-    /**
-    @DeleteMapping("/{id}")
-    public ResponseObject<String> delete(@PathVariable Integer id) {
-        return nhanVienService.delete(id);
-    }
-    **/
 
     @ExceptionHandler(CustomException.class)
     public ResponseObject<?> handleCustomException(CustomException e) {

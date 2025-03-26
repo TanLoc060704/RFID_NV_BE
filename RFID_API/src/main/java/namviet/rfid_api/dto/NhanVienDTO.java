@@ -12,4 +12,9 @@ public class NhanVienDTO {
     String hoTen;
     String chucVu;
     Integer accountId;
+    String username;
+    String password;
+    int roleId;
+    boolean active;
+    String roleName;
 }
