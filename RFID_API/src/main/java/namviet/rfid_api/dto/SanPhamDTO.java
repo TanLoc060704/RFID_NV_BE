@@ -27,4 +27,5 @@ public class SanPhamDTO {
     String nccInlay;
     int khachHangId;
     String tenKhachHang;
+    String url;
 }

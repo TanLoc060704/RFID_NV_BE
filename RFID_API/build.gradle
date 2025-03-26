@@ -44,6 +44,9 @@ dependencies {
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
     implementation 'org.apache.poi:poi-ooxml:5.2.3'  // Thư viện Apache POI cho định dạng Excel (XLSX)
     implementation 'org.apache.poi:poi:5.2.3'
+    dependencies {
+        implementation 'com.cloudinary:cloudinary-http44:1.29.0'
+    }
 }
 
 tasks.named('test') {

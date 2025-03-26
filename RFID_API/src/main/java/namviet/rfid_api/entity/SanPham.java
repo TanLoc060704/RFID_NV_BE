@@ -49,6 +49,9 @@ public class SanPham {
     @Column(name = "masp", length = 50)
     String masp;
 
+    @Column(name = "url")
+    String url;
+
     @ManyToOne
     @JoinColumn(name = "upc_id")
     Upc upc;

@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import namviet.rfid_api.constant.ResponseObject;
 import namviet.rfid_api.dto.SanPhamDTO;
 import namviet.rfid_api.exception.CustomException;
+import namviet.rfid_api.service.CloudinaryService;
 import namviet.rfid_api.service.SanPhamService;
 import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties;
 import org.springframework.core.io.Resource;
@@ -30,6 +31,17 @@ import java.util.Optional;
 public class SanPhamAPI {
 
     final SanPhamService sanPhamService;
+    final CloudinaryService cloudinaryService;
+
+    @PostMapping("/upload-img")
+    public ResponseObject<?> uploadImage(@RequestParam("file") MultipartFile file) {
+        String url = cloudinaryService.uploadImage(file);
+        return ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .message("Image uploaded successfully")
+                .data(url)
+                .build();
+    }
 
     @GetMapping
     public ResponseObject<?> timTatCaSanPham() {
