@@ -17,6 +17,7 @@ public interface DongGoiMapper {
     @Mapping(source = "banThanhPham.code", target = "codeBanThanhPham")
     @Mapping(source = "donHangSanPham.donHang.maLenh", target = "maLenh")
     @Mapping(source = "donHangSanPham.sanPham.sku", target = "sku")
+    @Mapping(source = "donHangSanPham.sanPham.url", target = "url")
     DongGoiDTO toDTO(DongGoi dongGoi);
 
     @Mapping(source = "donHangSanPhamId", target = "donHangSanPham.donHangSanPhamId")

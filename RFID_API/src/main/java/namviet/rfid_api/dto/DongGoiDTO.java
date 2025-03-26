@@ -27,4 +27,5 @@ public class DongGoiDTO {
     int startIndex;
     int endIndex;
     boolean status;
+    String url;
 }
