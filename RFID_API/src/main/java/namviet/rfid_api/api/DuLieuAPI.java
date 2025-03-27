@@ -105,6 +105,26 @@ public class DuLieuAPI {
                 .build();
     }
 
+    @GetMapping("/download-list-file-import-file-by-don-hang-san-pham-id")
+    public ResponseObject<List<FileResourceDTO>> downloadListFileImportFileByDonHangSanPhamId(@RequestParam("donHangID") int donHangID) {
+        List<FileResourceDTO> resources = duLieuService.downloadFileListImportFileByDonHangSanPhamId(donHangID);
+        return ResponseObject.<List<FileResourceDTO>>builder()
+                .status(HttpStatus.OK)
+                .message("Tạo File dữ liệu thành công")
+                .data(resources)
+                .build();
+    }
+
+    @GetMapping("/download-file-import-file-by-don-hang-san-pham-id")
+    public ResponseObject<FileResourceDTO> downloadFileImportFileByDonHangSanPhamId(@RequestParam("donHangSanPhamID") int donHangSanPhamID) {
+        FileResourceDTO resource = duLieuService.downloadFileImportFileByDonHangSanPhamId(donHangSanPhamID);
+        return ResponseObject.<FileResourceDTO>builder()
+                .status(HttpStatus.OK)
+                .message("Tạo File dữ liệu thành công")
+                .data(resource)
+                .build();
+    }
+
     @GetMapping("/find-by-epc")
     public ResponseObject<DuLieuDTO> findByEpc(@RequestParam("epc") String epc) {
         DuLieuDTO duLieuDTO = duLieuService.findByEpc(epc);

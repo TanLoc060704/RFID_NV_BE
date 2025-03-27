@@ -25,6 +25,9 @@ public interface DuLieuService {
     List<FileResourceDTO> downloadFileListHexByDonHangSanPhamId(int donHangSanPhamID);
     FileResourceDTO downloadFileHexByDonHangSanPhamId(int donHangSanPhamID);
 
+    List<FileResourceDTO> downloadFileListImportFileByDonHangSanPhamId(int donHangID);
+    FileResourceDTO downloadFileImportFileByDonHangSanPhamId(int donHangSanPhamID);
+
     DuLieuDTO findByEpc(String epc);
 
     String convertoHex(String chuoi);

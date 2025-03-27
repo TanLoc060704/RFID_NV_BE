@@ -370,6 +370,53 @@ public class DuLieuServiceImpl implements DuLieuService {
     }
 
     @Override
+    public List<FileResourceDTO> downloadFileListImportFileByDonHangSanPhamId(int donHangID) {
+        if (donHangID < 0) {
+            throw new CustomException("don Hang San Pham Id Null", HttpStatus.BAD_REQUEST);
+        }
+        List<DonHangSanPham> dsDonHangSanPham = donHangSanPhamRepository.findByDonHangDonHangId(donHangID);
+
+        if (dsDonHangSanPham.size() <= 0) {
+            throw new CustomException("Id Don Hang Khong Ton Tai", HttpStatus.BAD_REQUEST);
+        }
+
+        List<FileResourceDTO> resources = new ArrayList<>();
+        for (DonHangSanPham donHangSanPham : dsDonHangSanPham) {
+            List<Dulieu> dulieus = duLieuRepository.findByDonHangSanPhamDonHangSanPhamId(donHangSanPham.getDonHangSanPhamId());
+
+            String fileName = donHangSanPham.getTenFile();
+            ByteArrayResource resource = exportToExcelInMemoryHex(fileName, dulieus);
+            FileResourceDTO fileResourceDTO = new FileResourceDTO();
+            fileResourceDTO.setFileName(fileName);
+            fileResourceDTO.setFileContent(Base64.getEncoder().encodeToString(resource.getByteArray()));
+            resources.add(fileResourceDTO);
+            donHangSanPhamRepository.updateSoLanTao(donHangSanPham.getDonHangSanPhamId());
+        }
+        return resources;
+    }
+
+    @Override
+    public FileResourceDTO downloadFileImportFileByDonHangSanPhamId(int donHangSanPhamID) {
+        if (donHangSanPhamID < 0) {
+            throw new CustomException("don Hang San Pham Id Null", HttpStatus.BAD_REQUEST);
+        }
+        DonHangSanPham donHangSanPham = donHangSanPhamRepository.findByDonHangSanPhamId(donHangSanPhamID)
+                .orElseThrow(() -> new CustomException("Id Don Hang Khong Ton Tai", HttpStatus.BAD_REQUEST));
+
+
+        List<Dulieu> dulieus = duLieuRepository.findByDonHangSanPhamDonHangSanPhamId(donHangSanPham.getDonHangSanPhamId());
+
+        String fileName = donHangSanPham.getTenFile();
+        ByteArrayResource resource = exportToExcelInMemoryHex(fileName, dulieus);
+        FileResourceDTO fileResourceDTO = new FileResourceDTO();
+        fileResourceDTO.setFileName(fileName);
+        fileResourceDTO.setFileContent(Base64.getEncoder().encodeToString(resource.getByteArray()));
+        donHangSanPhamRepository.updateSoLanTao(donHangSanPham.getDonHangSanPhamId());
+
+        return fileResourceDTO;
+    }
+
+    @Override
     public DuLieuDTO findByEpc(String epc) {
         Dulieu dulieu = duLieuRepository.findByEpc(epc)
                 .orElseThrow(() -> new CustomException("Không tìm thấy dữ liệu", HttpStatus.NOT_FOUND));
