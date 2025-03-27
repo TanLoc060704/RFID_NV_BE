@@ -10,6 +10,8 @@ import namviet.rfid_api.exception.CustomException;
 import namviet.rfid_api.mapper.LuuMauMapper;
 import namviet.rfid_api.repository.LuuMauRepository;
 import namviet.rfid_api.service.LuuMauService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,5 +62,16 @@ public class LuuMauServiceImpl implements LuuMauService {
             throw new CustomException("Luu mau not found", HttpStatus.BAD_REQUEST);
         }
         luuMauRepository.deleteById(id);
+    }
+
+    @Override
+    public Page<LuuMauDTO> getLuuMauPagination(Pageable pageable) {
+        return luuMauRepository.findAll(pageable).map(luuMauMapper::toDto);
+    }
+
+    @Override
+    public Page<LuuMauDTO> searchWithFTSService(String searchText, Pageable pageable) {
+        Page<LuuMau> luuMauPage = luuMauRepository.searchWithFTS(searchText, pageable);
+        return luuMauPage.map(luuMauMapper::toDto);
     }
 }
