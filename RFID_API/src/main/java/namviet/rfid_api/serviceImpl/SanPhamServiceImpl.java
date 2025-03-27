@@ -2,6 +2,7 @@ package namviet.rfid_api.serviceImpl;
 
 import lombok.RequiredArgsConstructor;
 import namviet.rfid_api.dto.SanPhamDTO;
+import namviet.rfid_api.entity.KhachHang;
 import namviet.rfid_api.entity.SanPham;
 import namviet.rfid_api.exception.CustomException;
 import namviet.rfid_api.mapper.SanPhamMapper;
@@ -153,8 +154,14 @@ public class SanPhamServiceImpl implements SanPhamService {
                 sanPham.setMasp(StringCellValue.getCellValueAsString(row.getCell(2)));
                 sanPham.setUpc(upcRepository.findByUpc(StringCellValue.getCellValueAsString(row.getCell(3)))
                         .orElseThrow(() -> new CustomException("UPC not found", HttpStatus.BAD_REQUEST)));
-                sanPham.setKhachHang(khachHangRepository.findByTenKhachHang(StringCellValue.getCellValueAsString(row.getCell(4)))
-                        .orElseThrow(() -> new CustomException("Khach Hang not found", HttpStatus.BAD_REQUEST)));
+                String tenKhachHang = StringCellValue.getCellValueAsString(row.getCell(4));
+                KhachHang khachHang = khachHangRepository.findByTenKhachHang(tenKhachHang)
+                        .orElseGet(() -> {
+                            KhachHang newKhachHang = new KhachHang();
+                            newKhachHang.setTenKhachHang(tenKhachHang);
+                            return khachHangRepository.save(newKhachHang);
+                        });
+                sanPham.setKhachHang(khachHang);
                 sanPham.setHead(StringCellValue.getCellValueAsString(row.getCell(5)));
                 sanPham.setPartition((int) row.getCell(6).getNumericCellValue());
                 sanPham.setFilter((int) row.getCell(7).getNumericCellValue());

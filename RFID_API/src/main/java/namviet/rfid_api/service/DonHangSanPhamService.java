@@ -18,7 +18,7 @@ public interface DonHangSanPhamService {
     List<DonHangSanPhamDTO> themSPVaoDonHangNew(List<DonHangSanPhamDTO> DonHangSanPhamDTO);
     Optional<DonHangSanPhamDTO> timDonHangSanPham(int donHangSanPhamId);
     Optional<List<DonHangSanPhamDTO>> timDonHangTheoDonHangId(int donHangId);
-    List<DonHangSanPhamDTO> importFile (List<MultipartFile> dsFileImport, String maLenh, String sku, int viTriEPC);
+    List<DonHangSanPhamDTO> importFile (List<MultipartFile> dsFileImport, String maLenh, String sku, int viTriEPC, boolean isHex);
     List<DonHangSanPhamDTO> themSPVaoDonHangFile(MultipartFile multipartFile, String maLenh);
     DonHangSanPhamDTO themMotSanPhamVaoDonHang(String sku, String maLenh, int soLuong);
 }

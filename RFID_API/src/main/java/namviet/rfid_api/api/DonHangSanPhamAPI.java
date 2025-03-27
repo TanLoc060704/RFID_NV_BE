@@ -86,9 +86,9 @@ public class DonHangSanPhamAPI {
     }
 
     @PostMapping("/import-file")
-    public ResponseObject<?> importFile(@RequestParam("dsFile") List<MultipartFile> dsFile, @RequestParam("maLenh") String maLenh,@RequestParam("sku") String sku, @RequestParam("viTriEPC") int viTriEpc){
+    public ResponseObject<?> importFile(@RequestParam("dsFile") List<MultipartFile> dsFile, @RequestParam("maLenh") String maLenh,@RequestParam("sku") String sku, @RequestParam("viTriEPC") int viTriEpc, @RequestParam("isHex") boolean isHex) {
         try {
-            List<DonHangSanPhamDTO> dsDonHangSanPham = donHangSanPhamService.importFile(dsFile,maLenh,sku,viTriEpc);
+            List<DonHangSanPhamDTO> dsDonHangSanPham = donHangSanPhamService.importFile(dsFile,maLenh,sku,viTriEpc,isHex);
             return ResponseObject.builder()
                     .status(HttpStatus.OK)
                     .message("Import thanh công")

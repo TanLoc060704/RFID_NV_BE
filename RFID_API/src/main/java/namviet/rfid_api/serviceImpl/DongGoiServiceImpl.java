@@ -57,6 +57,7 @@ public class DongGoiServiceImpl implements DongGoiService {
                 .orElseThrow(() -> new CustomException("DongGoi not found", HttpStatus.NOT_FOUND));
         DongGoi updatedDongGoi = dongGoiMapper.toEntity(dongGoiDTO);
         updatedDongGoi.setDongGoiId(existingDongGoi.getDongGoiId());
+        updatedDongGoi.setStatus(true);
         return dongGoiMapper.toDTO(dongGoiRepository.save(updatedDongGoi));
     }
 

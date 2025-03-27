@@ -168,7 +168,7 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
 
     @Override
     @Transactional
-    public List<DonHangSanPhamDTO> importFile(List<MultipartFile> dsFileImport, String maLenh, String sku, int viTriEPC) {
+    public List<DonHangSanPhamDTO> importFile(List<MultipartFile> dsFileImport, String maLenh, String sku, int viTriEPC, boolean isHex) {
         DonHang donHang = donHangRepository.findByMaLenh(maLenh);
         SanPham sanPham = sanPhamRepository.findBySku(sku);
         if(donHang == null){
@@ -181,7 +181,7 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
 
         for (MultipartFile multipartFile : dsFileImport) {
             try {
-                DonHangSanPham donHangSanPham = readFileExcelExportDonHangSanPham(multipartFile, donHang, sanPham,viTriEPC);
+                DonHangSanPham donHangSanPham = readFileExcelExportDonHangSanPham(multipartFile, donHang, sanPham,viTriEPC,isHex);
 
                 boolean exists = donHangSanPhamRepository.existsByTenFile(donHangSanPham.getTenFile());
                 if (exists) {
@@ -196,9 +196,9 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
                     dulieu.setDonHangSanPham(savedDhSp);
                 }
                 duLieuRepository.saveAll(listDuLieu);
-
-
+                listDuLieu.clear();
             } catch (DataIntegrityViolationException e) {
+                e.printStackTrace( );
                 throw new CustomException("Error saving DonHangSanPham: Duplicate key violation for file: " + multipartFile.getOriginalFilename(), HttpStatus.BAD_REQUEST);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -314,7 +314,7 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
         return donHangSanPhamMapper.toDTO(donHangSanPhamRepository.save(donHangSanPham));
     }
 
-    private DonHangSanPham readFileExcelExportDonHangSanPham(MultipartFile multipartFile, DonHang donHang, SanPham sanPham, int viTriEPC) {
+    private DonHangSanPham readFileExcelExportDonHangSanPham(MultipartFile multipartFile, DonHang donHang, SanPham sanPham, int viTriEPC, boolean isHex) {
         listDuLieu = new ArrayList<>();
         String fileName = multipartFile.getOriginalFilename();
         boolean isXlsx = fileName != null && fileName.endsWith(".xlsx");
@@ -352,7 +352,11 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
                         Cell cellEPC = row.getCell(viTriEPC);
                         if (cellEPC != null) {
                             dulieu.setDataGoc(getCellStringValue(cellEPC));
-                            dulieu.setEpc(ConvertToHex.convertToHexadecimal(getCellStringValue(cellEPC)));
+                            if(isHex){
+                                dulieu.setEpc(ConvertToHex.convertToHexadecimal(getCellStringValue(cellEPC)));
+                            } else {
+                                dulieu.setEpc(getCellStringValue(cellEPC));
+                            }
                         }
                     }
                 }
