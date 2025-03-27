@@ -5,7 +5,7 @@ import namviet.rfid_api.entity.Dulieu;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring", uses = {SanPhamMapper.class,DonHangMapper.class})
+@Mapper(componentModel = "spring", uses = {SanPhamMapper.class,DonHangMapper.class, DonHangSanPhamMapper.class})
 public interface DuLieuMapper {
 
     @Mapping(source = "sanPham.sku", target = "sku")

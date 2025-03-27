@@ -105,6 +105,49 @@ public class DuLieuAPI {
                 .build();
     }
 
+    @GetMapping("/find-by-epc")
+    public ResponseObject<DuLieuDTO> findByEpc(@RequestParam("epc") String epc) {
+        DuLieuDTO duLieuDTO = duLieuService.findByEpc(epc);
+        return ResponseObject.<DuLieuDTO>builder()
+                .status(HttpStatus.OK)
+                .message("Tạo File dữ liệu thành công")
+                .data(duLieuDTO)
+                .build();
+    }
+
+    @GetMapping("/decode-epc")
+    public ResponseObject<SanPham> decodeEpc(@RequestParam("epc") String epc) {
+        SanPham sanPham = duLieuService.decoderEpc(epc);
+        return ResponseObject.<SanPham>builder()
+                .status(HttpStatus.OK)
+                .message("Tạo File dữ liệu thành công")
+                .data(sanPham)
+                .build();
+    }
+
+    @GetMapping("/encode-epc")
+    public ResponseObject<String> encodeEpc(@RequestParam("upc") String upc,
+                                            @RequestParam("partition") int partition,
+                                            @RequestParam("filter") int filter,
+                                            @RequestParam("serial") long serial) {
+        String epc = duLieuService.encoderEpc(upc, partition, filter, serial);
+        return ResponseObject.<String>builder()
+                .status(HttpStatus.OK)
+                .message("Tạo File dữ liệu thành công")
+                .data(epc)
+                .build();
+    }
+
+    @GetMapping("/convert-to-hex")
+    public ResponseObject<String> convertToHex(@RequestParam("chuoi") String chuoi) {
+        String hex = duLieuService.convertoHex(chuoi);
+        return ResponseObject.<String>builder()
+                .status(HttpStatus.OK)
+                .message("Tạo File dữ liệu thành công")
+                .data(hex)
+                .build();
+    }
+
     @ExceptionHandler(CustomException.class)
     public ResponseObject<?> handleCustomException(CustomException e) {
         return ResponseObject.builder()

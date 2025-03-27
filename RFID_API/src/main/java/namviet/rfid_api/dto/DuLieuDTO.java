@@ -14,5 +14,7 @@ public class DuLieuDTO {
     private Integer donHangId;
     private String noiDungBienDoi;
     private Integer donHangSanPhamId;
+    private SanPhamDTO sanPham;
+    private DonHangSanPhamDTO donHangSanPham;
 }
 

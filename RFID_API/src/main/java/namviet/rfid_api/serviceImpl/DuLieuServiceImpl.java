@@ -3,16 +3,19 @@ package namviet.rfid_api.serviceImpl;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import namviet.rfid_api.dto.DuLieuDTO;
 import namviet.rfid_api.dto.FileResourceDTO;
 import namviet.rfid_api.entity.DonHangSanPham;
 import namviet.rfid_api.entity.Dulieu;
 import namviet.rfid_api.entity.SanPham;
 import namviet.rfid_api.entity.Upc;
 import namviet.rfid_api.exception.CustomException;
+import namviet.rfid_api.mapper.DuLieuMapper;
 import namviet.rfid_api.repository.DonHangSanPhamRepository;
 import namviet.rfid_api.repository.DuLieuRepository;
 import namviet.rfid_api.repository.UpcRepository;
 import namviet.rfid_api.service.DuLieuService;
+import namviet.rfid_api.utils.ConvertToHex;
 import namviet.rfid_api.utils.Decoder;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -44,6 +47,7 @@ public class DuLieuServiceImpl implements DuLieuService {
     final DonHangSanPhamRepository donHangSanPhamRepository;
     final UpcRepository upcRepository;
     final DuLieuRepository duLieuRepository;
+    final DuLieuMapper duLieuMapper;
 
     @Override
     @Transactional
@@ -103,6 +107,14 @@ public class DuLieuServiceImpl implements DuLieuService {
             throw new CustomException("epc null",HttpStatus.BAD_REQUEST);
         }
         return Decoder.epcToDulieu(epc);
+    }
+
+    @Override
+    public String encoderEpc(String upc, int partitin,int filter, long serial) {
+        if(upc == null || partitin < 0 || filter < 0 || serial < 0){
+            throw new CustomException("san pham null",HttpStatus.BAD_REQUEST);
+        }
+        return taoEPCtheoChuanGS1( upc,  partitin, filter, serial);
     }
 
 
@@ -355,6 +367,18 @@ public class DuLieuServiceImpl implements DuLieuService {
         donHangSanPhamRepository.updateSoLanTao(donHangSanPham.getDonHangSanPhamId());
 
         return fileResourceDTO;
+    }
+
+    @Override
+    public DuLieuDTO findByEpc(String epc) {
+        Dulieu dulieu = duLieuRepository.findByEpc(epc)
+                .orElseThrow(() -> new CustomException("Không tìm thấy dữ liệu", HttpStatus.NOT_FOUND));
+        return duLieuMapper.toDto(dulieu);
+    }
+
+    @Override
+    public String convertoHex(String chuoi) {
+        return ConvertToHex.convertToHexadecimal(chuoi);
     }
 
     private ByteArrayResource exportToExcelInMemoryHex(String fileName, List<Dulieu> dulieus) {

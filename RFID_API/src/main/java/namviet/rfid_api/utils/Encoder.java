@@ -1,6 +1,7 @@
 package namviet.rfid_api.utils;
 
 import namviet.rfid_api.entity.SanPham;
+import namviet.rfid_api.entity.Upc;
 import namviet.rfid_api.exception.CustomException;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,59 @@ public class Encoder {
      */
     public static String taoEPCtheoChuanGS1(SanPham sanPham) {
         String upc = sanPham.getUpc().getUpc();
+
+        sanPham.getUpc().setUpc(Encoder.removeCheckDigit(validateAndRetrieveUPC(sanPham)));
+        String company = processUPCCompany(sanPham.getUpc().getUpc(), sanPham.getPartition());
+        String itemReference = processUPCItem(sanPham.getUpc().getUpc(), sanPham.getPartition());
+        Long serial = sanPham.getUpc().getSerial();
+        int header = 48;
+        int filter = sanPham.getFilter();
+        int partition = sanPham.getPartition();
+
+        String binaryHeader = String.format("%8s", Integer.toBinaryString(header)).replace(' ', '0');
+        String binaryFilter = String.format("%3s", Integer.toBinaryString(filter)).replace(' ', '0');
+        String binaryPartition = String.format("%3s", Integer.toBinaryString(partition)).replace(' ', '0');
+
+        int companyBits = 0;
+        int itemReferenceBits = 0;
+        switch (partition) {
+            case 0: companyBits = 40; itemReferenceBits = 4; break;
+            case 1: companyBits = 37; itemReferenceBits = 7; break;
+            case 2: companyBits = 34; itemReferenceBits = 10; break;
+            case 3: companyBits = 30; itemReferenceBits = 14; break;
+            case 4: companyBits = 27; itemReferenceBits = 17; break;
+            case 5: companyBits = 24; itemReferenceBits = 20; break;
+            case 6: companyBits = 20; itemReferenceBits = 24; break;
+            default: throw new CustomException("Partition không hợp lệ", HttpStatus.BAD_REQUEST);
+        }
+
+        String binaryCompany = String.format("%" + companyBits + "s", Integer.toBinaryString(Integer.parseInt(company))).replace(' ', '0');
+        String binaryItemReference = String.format("%" + itemReferenceBits + "s", Integer.toBinaryString(Integer.parseInt(itemReference))).replace(' ', '0');
+        String binarySerial = String.format("%38s", Long.toBinaryString(serial)).replace(' ', '0');
+        String epcBinary = binaryHeader + binaryFilter + binaryPartition + binaryCompany + binaryItemReference + binarySerial;
+        sanPham.getUpc().setUpc(upc);
+        return binaryToHex(epcBinary);
+    }
+
+    /**
+     * Hàm tạo EPC theo chuẩn GS1 cho sản phẩm.
+     *
+     * Hàm này sẽ tạo một EPC 128-bit từ các thông tin của sản phẩm bao gồm:
+     * - Header (8 bit)
+     * - Filter (3 bit)
+     * - Partition (3 bit)
+     * - Company (40, 37, 34, 30, 27, 24, hoặc 20 bit tùy theo partition)
+     * - Item Reference (4, 7, 10, 14, 17, 20, hoặc 24 bit tùy theo partition)
+     * - Serial (38 bit)
+     *
+     * @param String upc, int partitin,int filter, long serial Sản phẩm DTO chứa thông tin cần thiết để tạo EPC.
+     * @return EPC dạng chuỗi nhị phân (128-bit).
+     */
+    public static String taoEPCtheoChuanGS1(String upc, int partitionDTO,int filterDTO, long serialDTO) {
+        SanPham sanPham = new SanPham();
+        sanPham.setUpc(new Upc(upc, serialDTO));
+        sanPham.setFilter(filterDTO);
+        sanPham.setPartition(partitionDTO);
 
         sanPham.getUpc().setUpc(Encoder.removeCheckDigit(validateAndRetrieveUPC(sanPham)));
         String company = processUPCCompany(sanPham.getUpc().getUpc(), sanPham.getPartition());
