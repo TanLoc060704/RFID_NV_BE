@@ -14,6 +14,7 @@ public interface SanPhamMapper {
     @Mapping(source = "upc.upc",target = "upc")
     @Mapping(source = "khachHang.khachHangId",target = "khachHangId")
     @Mapping(source = "khachHang.tenKhachHang",target = "tenKhachHang")
+    @Mapping(source = "upc.serial",target = "serial")
     SanPhamDTO toDto(SanPham sanPham);
 
 //    @Mapping(source = "upcDTO",target = "upc")

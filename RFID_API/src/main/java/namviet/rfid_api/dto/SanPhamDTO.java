@@ -14,10 +14,10 @@ public class SanPhamDTO {
 
     Integer partition;
     Integer filter;
-//    Long serial;
+    Long serial;
     String upc;
     int upcId;
-//    UpcDTO upcDTO;
+    UpcDTO upcDTO;
     String masp;
     String head;
     String content;

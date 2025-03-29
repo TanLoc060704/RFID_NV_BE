@@ -27,10 +27,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
@@ -171,6 +172,75 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
     public List<DonHangSanPhamDTO> importFile(List<MultipartFile> dsFileImport, String maLenh, String sku, int viTriEPC, boolean isHex) {
         DonHang donHang = donHangRepository.findByMaLenh(maLenh);
         SanPham sanPham = sanPhamRepository.findBySku(sku);
+
+        if (donHang == null) {
+            throw new CustomException("Don Hang not found", HttpStatus.BAD_REQUEST);
+        }
+        if (sanPham == null) {
+            throw new CustomException("SKU not found", HttpStatus.BAD_REQUEST);
+        }
+
+        Set<String> existingFiles = ConcurrentHashMap.newKeySet();
+        existingFiles.addAll(donHangSanPhamRepository.findAllTenFile());
+
+        List<DonHangSanPham> dsDonHangSanPham = Collections.synchronizedList(new ArrayList<>());
+        List<Dulieu> allDuLieu = Collections.synchronizedList(new ArrayList<>());
+
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+        dsFileImport.forEach(multipartFile -> {
+            executorService.submit(() -> {
+                try {
+                    DonHangSanPham donHangSanPham = readFileExcelExportDonHangSanPham(multipartFile, donHang, sanPham, viTriEPC, isHex);
+
+                    if (existingFiles.contains(donHangSanPham.getTenFile())) {
+                        throw new CustomException("File already exists: " + donHangSanPham.getTenFile(), HttpStatus.BAD_REQUEST);
+                    }
+                    existingFiles.add(donHangSanPham.getTenFile());
+
+                    donHangSanPham.setSoLanTao(1);
+                    dsDonHangSanPham.add(donHangSanPham);
+
+                    listDuLieu.forEach(d -> d.setDonHangSanPham(donHangSanPham));
+                    allDuLieu.addAll(listDuLieu);
+                    listDuLieu.clear();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw new CustomException("Error processing file: " + multipartFile.getOriginalFilename(), HttpStatus.BAD_REQUEST);
+                }
+            });
+        });
+
+        executorService.shutdown();
+        try {
+            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            throw new CustomException("Error waiting for file processing to complete", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        // Save in larger batches
+        final int batchSize = 10000;
+        for (int i = 0; i < dsDonHangSanPham.size(); i += batchSize) {
+            int end = Math.min(i + batchSize, dsDonHangSanPham.size());
+            donHangSanPhamRepository.saveAll(dsDonHangSanPham.subList(i, end));
+        }
+        for (int i = 0; i < allDuLieu.size(); i += batchSize) {
+            int end = Math.min(i + batchSize, allDuLieu.size());
+            duLieuRepository.saveAll(allDuLieu.subList(i, end));
+        }
+
+        return dsDonHangSanPham.stream()
+                .map(donHangSanPhamMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+    @Override
+    @Transactional
+    public List<DonHangSanPhamDTO> importFile(List<MultipartFile> dsFileImport, String maLenh, String sku, int viTriEPC, boolean isHex) {
+        DonHang donHang = donHangRepository.findByMaLenh(maLenh);
+        SanPham sanPham = sanPhamRepository.findBySku(sku);
         if(donHang == null){
             throw new CustomException("Don Hang not found",HttpStatus.BAD_REQUEST);
         }
@@ -209,7 +279,58 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
         return dsDonHangSanPham.stream()
                 .map(donHangSanPhamMapper::toDTO)
                 .collect(Collectors.toList());
-    }
+    }*/
+/**
+    @Override
+    @Transactional
+    public List<DonHangSanPhamDTO> importFile(List<MultipartFile> dsFileImport, String maLenh, String sku, int viTriEPC, boolean isHex) {
+        DonHang donHang = donHangRepository.findByMaLenh(maLenh);
+        SanPham sanPham = sanPhamRepository.findBySku(sku);
+
+        if (donHang == null) {
+            throw new CustomException("Don Hang not found", HttpStatus.BAD_REQUEST);
+        }
+        if (sanPham == null) {
+            throw new CustomException("SKU not found", HttpStatus.BAD_REQUEST);
+        }
+
+        Set<String> existingFiles = new HashSet<>(donHangSanPhamRepository.findAllTenFile()); // Lấy trước danh sách file
+
+        List<DonHangSanPham> dsDonHangSanPham = new ArrayList<>();
+        List<Dulieu> allDuLieu = new ArrayList<>();
+
+        for (MultipartFile multipartFile : dsFileImport) {
+            try {
+                DonHangSanPham donHangSanPham = readFileExcelExportDonHangSanPham(multipartFile, donHang, sanPham, viTriEPC, isHex);
+
+                if (existingFiles.contains(donHangSanPham.getTenFile())) {
+                    throw new CustomException("File already exists: " + donHangSanPham.getTenFile(), HttpStatus.BAD_REQUEST);
+                }
+
+                donHangSanPham.setSoLanTao(1);
+                dsDonHangSanPham.add(donHangSanPham);
+                existingFiles.add(donHangSanPham.getTenFile());
+
+                // Cập nhật DonHangSanPham cho Dulieu
+                listDuLieu.forEach(d -> d.setDonHangSanPham(donHangSanPham));
+                allDuLieu.addAll(listDuLieu);
+                listDuLieu.clear();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new CustomException("Error processing file: " + multipartFile.getOriginalFilename(), HttpStatus.BAD_REQUEST);
+            }
+        }
+
+        // Lưu hàng loạt để tối ưu tốc độ
+        donHangSanPhamRepository.saveAll(dsDonHangSanPham);
+        duLieuRepository.saveAll(allDuLieu);
+
+        return dsDonHangSanPham.stream()
+                .map(donHangSanPhamMapper::toDTO)
+                .collect(Collectors.toList());
+    }*/
+
 
     @Override
     @Transactional
@@ -375,6 +496,96 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
         return donHangSanPham;
     }
 
+/**
+    private DonHangSanPham readFileExcelExportDonHangSanPham(MultipartFile multipartFile, DonHang donHang, SanPham sanPham, int viTriEPC, boolean isHex) {
+        listDuLieu = new ArrayList<>();
+        String fileName = multipartFile.getOriginalFilename();
+        boolean isXlsx = fileName != null && fileName.endsWith(".xlsx");
+        boolean isXls = fileName != null && fileName.endsWith(".xls");
+
+        if (!isXls && !isXlsx) {
+            throw new CustomException("File không đúng định dạng (.xls,.xlsx)", HttpStatus.BAD_REQUEST);
+        }
+
+        DonHangSanPham donHangSanPham = new DonHangSanPham();
+        donHangSanPham.setTenFile(fileName);
+        donHangSanPham.setDonHang(donHang);
+        donHangSanPham.setSanPham(sanPham);
+
+        try (InputStream inputStream = multipartFile.getInputStream();
+             Workbook workbook = isXlsx ? new XSSFWorkbook(inputStream) : new HSSFWorkbook(inputStream)) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+            int totalRows = sheet.getLastRowNum();
+            System.out.println("📌 File: " + fileName + " | Tổng số dòng trong sheet: " + totalRows);
+
+            if (totalRows == 0) {
+                throw new CustomException("File không có dữ liệu hoặc bị lỗi định dạng", HttpStatus.BAD_REQUEST);
+            }
+
+            int soLuong = 0;
+            List<Dulieu> batchList = new ArrayList<>();
+            final int BATCH_SIZE = 5000;
+
+            // Duyệt từng dòng theo chỉ mục (bỏ qua header - dòng đầu tiên)
+            for (int rowIndex = 1; rowIndex <= totalRows; rowIndex++) {
+                Row row = sheet.getRow(rowIndex);
+                if (row == null) {
+                    System.out.println("⚠️ Dòng " + rowIndex + " bị null, bỏ qua...");
+                    continue;
+                }
+
+                Dulieu dulieu = new Dulieu();
+                StringBuilder sb = new StringBuilder();
+                boolean hasData = false;
+
+                for (int i = 0; i < row.getLastCellNum(); i++) {
+                    Cell cell = row.getCell(i, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+                    if (cell == null) continue;
+
+                    hasData = true; // Nếu có ít nhất 1 ô có dữ liệu, đánh dấu là dòng hợp lệ
+                    if (i != viTriEPC) {
+                        sb.append(getCellStringValue(cell)).append("|");
+                    } else {
+                        String cellValue = getCellStringValue(cell);
+                        dulieu.setDataGoc(cellValue);
+                        dulieu.setEpc(isHex ? ConvertToHex.convertToHexadecimal(cellValue) : cellValue);
+                    }
+                }
+
+                if (!hasData) {
+                    System.out.println("⚠️ Dòng " + rowIndex + " không có dữ liệu, bỏ qua...");
+                    continue;
+                }
+
+                dulieu.setSku(sanPham.getSku());
+                dulieu.setDonHang(donHang);
+                dulieu.setSanPham(sanPham);
+                dulieu.setNoiDungBienDoi(sb.toString());
+
+                batchList.add(dulieu);
+                soLuong++;
+
+                if (batchList.size() >= BATCH_SIZE) {
+                    listDuLieu.addAll(batchList);
+                    batchList.clear();
+                }
+            }
+
+            // Thêm batch còn lại
+            if (!batchList.isEmpty()) {
+                listDuLieu.addAll(batchList);
+            }
+
+            donHangSanPham.setSoLuong(soLuong);
+            System.out.println("✅ Đọc xong file: " + fileName + " | Số dòng thực tế: " + soLuong);
+
+        } catch (Exception e) {
+            throw new CustomException("Lỗi khi đọc file: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+        return donHangSanPham;
+    }
+*/
 
     private String getCellStringValue(Cell cell) {
         if( cell != null){

@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 @Transactional
@@ -17,6 +18,9 @@ public interface DonHangSanPhamRepository extends JpaRepository<DonHangSanPham, 
     List<DonHangSanPham> findByDonHangMaLenhContaining(String maLenh);
     List<DonHangSanPham> findByDonHangDonHangId(int donHangId);
     boolean existsByTenFile(String tenFile);
+
+    @Query("SELECT d.tenFile FROM DonHangSanPham d")
+    Set<String> findAllTenFile();
 
     @Modifying
     @Query("UPDATE DonHangSanPham d SET d.soLanTao = d.soLanTao + 1 WHERE d.donHangSanPhamId = :donHangSanPhamId")
