@@ -19,6 +19,8 @@ import namviet.rfid_api.utils.ConvertToHex;
 import namviet.rfid_api.utils.Decoder;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.streaming.SXSSFSheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.core.io.ByteArrayResource;
@@ -475,8 +477,8 @@ public class DuLieuServiceImpl implements DuLieuService {
     }
 
     private ByteArrayResource exportToExcelInMemory(String fileName, List<Dulieu> data, List<Upc> upcs, String[] content) {
-        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            XSSFSheet sheet = workbook.createSheet("Data");
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            SXSSFSheet sheet = workbook.createSheet("Data");
 
             String[] columns = {"STT", "EPC", "UPC", "Serial"};
 
