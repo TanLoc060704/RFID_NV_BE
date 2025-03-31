@@ -153,6 +153,21 @@ public class UpcApi {
                 .build();
     }
 
+    @GetMapping("/template")
+    public ResponseObject<?> template() {
+        try {
+            return ResponseObject.builder()
+                    .status(HttpStatus.OK)
+                    .message("Template created successfully")
+                    .data(upcService.template())
+                    .build();
+        } catch (CustomException a) {
+            throw a;
+        } catch (Exception e) {
+            throw new CustomException("Error creating template", HttpStatus.BAD_REQUEST);
+        }
+    }
+
     @ExceptionHandler(CustomException.class)
     public ResponseObject<?> handleCustomException(CustomException e) {
         return ResponseObject.builder()
