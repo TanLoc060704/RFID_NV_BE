@@ -141,7 +141,7 @@ public class SanPhamServiceImpl implements SanPhamService {
     @Override
     public void uploadFile(MultipartFile file) {
         if (file.isEmpty()) {
-            throw new CustomException("Upload file Error", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new CustomException("File not found", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         try (InputStream inputStream = file.getInputStream()) {
@@ -171,6 +171,8 @@ public class SanPhamServiceImpl implements SanPhamService {
                 sanPham.setContent(StringCellValue.getCellValueAsString(row.getCell(11)));
                 sanPhamRepository.save(sanPham);
             }
+        } catch (CustomException e) {
+            throw e;
         } catch (Exception e) {
             throw new CustomException("Upload file Error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
