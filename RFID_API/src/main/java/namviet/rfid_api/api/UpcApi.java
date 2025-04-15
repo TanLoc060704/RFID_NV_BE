@@ -8,11 +8,15 @@ import namviet.rfid_api.constant.ResponseObject;
 import namviet.rfid_api.dto.UpcDTO;
 import namviet.rfid_api.exception.CustomException;
 import namviet.rfid_api.service.UpcService;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -153,17 +157,34 @@ public class UpcApi {
                 .build();
     }
 
+//    @GetMapping("/template")
+//    public ResponseObject<?> template() {
+//        try {
+//            return ResponseObject.builder()
+//                    .status(HttpStatus.OK)
+//                    .message("Template created successfully")
+//                    .data(upcService.template())
+//                    .build();
+//        } catch (CustomException a) {
+//            throw a;
+//        } catch (Exception e) {
+//            throw new CustomException("Error creating template", HttpStatus.BAD_REQUEST);
+//        }
+//    }
+
     @GetMapping("/template")
-    public ResponseObject<?> template() {
+    public ResponseEntity<Resource> template() {
         try {
-            return ResponseObject.builder()
-                    .status(HttpStatus.OK)
-                    .message("Template created successfully")
-                    .data(upcService.template())
-                    .build();
-        } catch (CustomException a) {
-            throw a;
+            // Gọi service để tạo file Excel
+            Resource resource = upcService.template();
+
+            // Thiết lập header để tải file
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=template_upc.xlsx") // Tên file tải về
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM) // Loại file
+                    .body(resource);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new CustomException("Error creating template", HttpStatus.BAD_REQUEST);
         }
     }

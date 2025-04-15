@@ -89,7 +89,7 @@ public class UpcServiceImpl implements UpcService {
 @Override
 public Resource template() {
     try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-        var sheet = workbook.createSheet("danh sahc Upc");
+        var sheet = workbook.createSheet("Danh sách UPC");
         var headerRow = sheet.createRow(0);
         String[] headers = {"STT", "UPC", "Serial"};
         for (int i = 0; i < headers.length; i++) {
