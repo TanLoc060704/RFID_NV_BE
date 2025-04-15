@@ -308,6 +308,7 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
 
                 DonHangSanPham donHangSanPham = new DonHangSanPham();
                 donHangSanPham.setDonHang(donHang);
+                donHangSanPham.setSoLanTao(1);
                 donHangSanPham.setSanPham(sanPham);
                 donHangSanPham.setSoLuong(soLuong);
                 String tenFile = taoTenFile(sanPhamMapper.toDto(sanPham));
