@@ -111,6 +111,15 @@ public class DonHangSanPhamAPI {
                 .build();
     }
 
+    @DeleteMapping("/xoa-don-hang-san-pham")
+    public ResponseObject<?> deleteDonHangSanPham(@RequestParam("dh-sp-id") int donHangSanPhamId) {
+        donHangSanPhamService.deleteDonHangSanPham(donHangSanPhamId);
+        return ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .message("Xóa đơn hàng sản phẩm thành công")
+                .build();
+    }
+
     @ExceptionHandler(CustomException.class)
     public ResponseObject<?> handleCustomException(CustomException e) {
         return ResponseObject.builder()

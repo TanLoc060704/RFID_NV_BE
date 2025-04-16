@@ -27,6 +27,8 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -50,6 +54,42 @@ public class DuLieuServiceImpl implements DuLieuService {
     final UpcRepository upcRepository;
     final DuLieuRepository duLieuRepository;
     final DuLieuMapper duLieuMapper;
+
+    final JdbcTemplate jdbcTemplate;
+
+
+    @Transactional
+    public void batchInsertDulieu(List<Dulieu> dulieus) {
+        String sql = "INSERT INTO data (epc, sku, don_hang_id, tid, data_goc, noi_dung_bien_doi, don_hang_san_pham_id) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        int batchSize = 1000;
+        int total = dulieus.size();
+
+        for (int i = 0; i < total; i += batchSize) {
+            List<Dulieu> batchList = dulieus.subList(i, Math.min(i + batchSize, total));
+
+            jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+                @Override
+                public void setValues(PreparedStatement ps, int j) throws SQLException {
+                    Dulieu d = batchList.get(j);
+                    ps.setString(1, d.getEpc());
+                    ps.setString(2, d.getSku());
+                    ps.setInt(3, d.getDonHang().getDonHangId());
+                    ps.setString(4, d.getTid());
+                    ps.setString(5, d.getDataGoc());
+                    ps.setString(6, d.getNoiDungBienDoi());
+                    ps.setInt(7, d.getDonHangSanPham().getDonHangSanPhamId());
+                }
+
+                @Override
+                public int getBatchSize() {
+                    return batchList.size();
+                }
+            });
+        }
+    }
+
 
     @Override
     @Transactional
@@ -84,7 +124,7 @@ public class DuLieuServiceImpl implements DuLieuService {
                 Upc upcExcel = new Upc(sanPhamDecoder.getUpc().getUpc(),sanPhamDecoder.getUpc().getSerial());
 
                 try{
-                    duLieuRepository.save(dulieu);
+//                    duLieuRepository.save(dulieu);
                     dulieus.add(dulieu);
                     upcList.add(upcExcel);
                     serial += 1;
@@ -97,6 +137,12 @@ public class DuLieuServiceImpl implements DuLieuService {
                     Upc upcSave = new Upc(sanPham.getUpc().getUpcId(),sanPham.getUpc().getUpc(), serial);
                     updateSerial(upcSave);
                 }
+            }
+
+            try {
+                batchInsertDulieu(dulieus);
+            } catch (Exception e) {
+                throw new CustomException(String.valueOf(e), HttpStatus.BAD_REQUEST);
             }
             exportToExcel(donHangSanPham.getTenFile(),dulieus,upcList,content);
         }
@@ -154,7 +200,7 @@ public class DuLieuServiceImpl implements DuLieuService {
                 Upc upcExcel = new Upc(sanPhamDecoder.getUpc().getUpc(), sanPhamDecoder.getUpc().getSerial());
 
                 try {
-                    duLieuRepository.save(dulieu);
+//                    duLieuRepository.save(dulieu);
                     dulieus.add(dulieu);
                     upcList.add(upcExcel);
                     serial += 1;
@@ -167,6 +213,13 @@ public class DuLieuServiceImpl implements DuLieuService {
                     Upc upcSave = new Upc(sanPham.getUpc().getUpcId(), sanPham.getUpc().getUpc(), serial);
                     updateSerial(upcSave);
                 }
+            }
+
+
+            try {
+                batchInsertDulieu(dulieus);
+            } catch (Exception e) {
+                throw new CustomException(String.valueOf(e), HttpStatus.BAD_REQUEST);
             }
 
             String fileName = donHangSanPham.getTenFile();
@@ -207,7 +260,7 @@ public class DuLieuServiceImpl implements DuLieuService {
             Upc upcExcel = new Upc(sanPhamDecoder.getUpc().getUpc(), sanPhamDecoder.getUpc().getSerial());
 
             try {
-                duLieuRepository.save(dulieu);
+//                duLieuRepository.save(dulieu);
                 dulieus.add(dulieu);
                 upcList.add(upcExcel);
                 serial += 1;
@@ -220,6 +273,12 @@ public class DuLieuServiceImpl implements DuLieuService {
                 Upc upcSave = new Upc(sanPham.getUpc().getUpcId(), sanPham.getUpc().getUpc(), serial);
                 updateSerial(upcSave);
             }
+        }
+
+        try {
+            batchInsertDulieu(dulieus);
+        } catch (Exception e) {
+            throw new CustomException(String.valueOf(e), HttpStatus.BAD_REQUEST);
         }
 
         String fileName = donHangSanPham.getTenFile();
@@ -260,7 +319,7 @@ public class DuLieuServiceImpl implements DuLieuService {
                 Upc upcExcel = new Upc(sanPham.getUpc().getUpc(), sanPham.getUpc().getSerial());
 
                 try {
-                    duLieuRepository.save(dulieu);
+//                    duLieuRepository.save(dulieu);
                     dulieus.add(dulieu);
                     upcList.add(upcExcel);
                     serial += 1;
@@ -268,6 +327,13 @@ public class DuLieuServiceImpl implements DuLieuService {
                 } catch (Exception e) {
                     throw new CustomException(String.valueOf(e), HttpStatus.BAD_REQUEST);
                 }
+            }
+
+
+            try {
+                batchInsertDulieu(dulieus);
+            } catch (Exception e) {
+                throw new CustomException(String.valueOf(e), HttpStatus.BAD_REQUEST);
             }
             String fileName = donHangSanPham.getTenFile();
             ByteArrayResource resource = exportToExcelInMemory(fileName, dulieus, upcList, content);
@@ -305,7 +371,7 @@ public class DuLieuServiceImpl implements DuLieuService {
             Upc upcExcel = new Upc(sanPham.getUpc().getUpc(), sanPham.getUpc().getSerial());
 
             try {
-                duLieuRepository.save(dulieu);
+//                duLieuRepository.save(dulieu);
                 dulieus.add(dulieu);
                 upcList.add(upcExcel);
                 serial += 1;
@@ -314,6 +380,14 @@ public class DuLieuServiceImpl implements DuLieuService {
                 throw new CustomException(String.valueOf(e), HttpStatus.BAD_REQUEST);
             }
         }
+
+
+        try {
+            batchInsertDulieu(dulieus);
+        } catch (Exception e) {
+            throw new CustomException(String.valueOf(e), HttpStatus.BAD_REQUEST);
+        }
+
         String fileName = donHangSanPham.getTenFile();
         ByteArrayResource resource = exportToExcelInMemory(fileName, dulieus, upcList, content);
         FileResourceDTO fileResourceDTO = new FileResourceDTO();

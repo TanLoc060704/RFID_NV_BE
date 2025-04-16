@@ -21,4 +21,5 @@ public interface DonHangSanPhamService {
     List<DonHangSanPhamDTO> importFile (List<MultipartFile> dsFileImport, String maLenh, String sku, int viTriEPC, boolean isHex);
     List<DonHangSanPhamDTO> themSPVaoDonHangFile(MultipartFile multipartFile, String maLenh);
     DonHangSanPhamDTO themMotSanPhamVaoDonHang(String sku, String maLenh, int soLuong);
+    void deleteDonHangSanPham(int donHangSanPhamId);
 }

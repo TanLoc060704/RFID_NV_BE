@@ -5,15 +5,13 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import namviet.rfid_api.dto.DonHangSanPhamDTO;
 import namviet.rfid_api.dto.SanPhamDTO;
-import namviet.rfid_api.entity.DonHang;
-import namviet.rfid_api.entity.DonHangSanPham;
-import namviet.rfid_api.entity.Dulieu;
-import namviet.rfid_api.entity.SanPham;
+import namviet.rfid_api.entity.*;
 import namviet.rfid_api.exception.CustomException;
 import namviet.rfid_api.mapper.*;
 import namviet.rfid_api.repository.*;
 import namviet.rfid_api.service.DonHangSanPhamService;
 import namviet.rfid_api.utils.ConvertToHex;
+import namviet.rfid_api.utils.Encoder;
 import org.antlr.v4.runtime.misc.Pair;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
@@ -26,10 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -52,8 +48,9 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
     final DuLieuRepository duLieuRepository;
 
     final JdbcTemplate jdbcTemplate;
+    private final Encoder encoder;
 
-
+    /**
     public void batchInsertDulieu(List<Dulieu> dulieus) {
         String sql = "INSERT INTO data (epc, sku, don_hang_id, tid, data_goc, noi_dung_bien_doi, don_hang_san_pham_id) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -74,7 +71,39 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
                 return dulieus.size();
             }
         });
-    }
+    }*/
+
+        @Transactional
+        public void batchInsertDulieu(List<Dulieu> dulieus) {
+            String sql = "INSERT INTO data (epc, sku, don_hang_id, tid, data_goc, noi_dung_bien_doi, don_hang_san_pham_id) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+            int batchSize = 1000;
+            int total = dulieus.size();
+
+            for (int i = 0; i < total; i += batchSize) {
+                List<Dulieu> batchList = dulieus.subList(i, Math.min(i + batchSize, total));
+
+                jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int j) throws SQLException {
+                        Dulieu d = batchList.get(j);
+                        ps.setString(1, d.getEpc());
+                        ps.setString(2, d.getSku());
+                        ps.setInt(3, d.getDonHang().getDonHangId());
+                        ps.setString(4, d.getTid());
+                        ps.setString(5, d.getDataGoc());
+                        ps.setString(6, d.getNoiDungBienDoi());
+                        ps.setInt(7, d.getDonHangSanPham().getDonHangSanPhamId());
+                    }
+
+                    @Override
+                    public int getBatchSize() {
+                        return batchList.size();
+                    }
+                });
+            }
+        }
 
     @Override
     public List<DonHangSanPhamDTO> dSSanPhamTheoDonHang(String maLenh) {
@@ -221,7 +250,7 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
             long start = System.currentTimeMillis();
             try {
                 long startR = System.currentTimeMillis();
-                DonHangSanPham donHangSanPham = readFileExcelExportDonHangSanPham(multipartFile, donHang, sanPham, viTriEPC, isHex);
+                DonHangSanPham donHangSanPham = readFileExportDonHangSanPham(multipartFile, donHang, sanPham, viTriEPC, isHex);
                 System.out.println("Thời gian đọc file : " + i +" "+ (System.currentTimeMillis() - startR) + "ms");
 
                 if (existingFiles.contains(donHangSanPham.getTenFile())) {
@@ -364,63 +393,142 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
         return donHangSanPhamMapper.toDTO(donHangSanPhamRepository.save(donHangSanPham));
     }
 
+    @Override
+    public void deleteDonHangSanPham(int donHangSanPhamId) {
+        if (donHangSanPhamId <= 0) {
+            throw new CustomException("ID không hợp lệ", HttpStatus.BAD_REQUEST);
+        }
 
-    private DonHangSanPham readFileExcelExportDonHangSanPham(MultipartFile multipartFile, DonHang donHang, SanPham sanPham, int viTriEPC, boolean isHex) {
+        Optional<DonHangSanPham> donHangSanPhamOptional = donHangSanPhamRepository.findByDonHangSanPhamId(donHangSanPhamId);
+        if (donHangSanPhamOptional.isEmpty()) {
+            throw new EntityNotFoundException("Không tìm thấy đơn hàng sản phẩm với ID: " + donHangSanPhamId);
+        }
+
+        DonHangSanPham donHangSanPham = donHangSanPhamOptional.get();
+        try {
+            // Xóa tất cả dữ liệu liên quan đến donHangSanPham
+            List<Dulieu> dulieus = duLieuRepository.findByDonHangSanPhamDonHangSanPhamId(donHangSanPhamId);
+            for (Dulieu dulieu : dulieus) {
+                duLieuRepository.delete(dulieu);
+            }
+            // Xóa donHangSanPham
+            donHangSanPhamRepository.delete(donHangSanPham);
+        } catch (DataIntegrityViolationException e) {
+            throw new CustomException("Không thể xóa đơn hàng sản phẩm này vì nó đang được sử dụng", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+
+    private DonHangSanPham readFileExportDonHangSanPham(MultipartFile multipartFile, DonHang donHang, SanPham sanPham, int viTriEPC, boolean isHex) {
         listDuLieu = new ArrayList<>();
         String fileName = multipartFile.getOriginalFilename();
         boolean isXlsx = fileName != null && fileName.endsWith(".xlsx");
         boolean isXls = fileName != null && fileName.endsWith(".xls");
+        boolean isCsv = fileName != null && fileName.endsWith(".csv");
 
-        if (!isXls && !isXlsx) {
-            throw new CustomException("File không đúng định dạng (.xls,.xlsx)", HttpStatus.BAD_REQUEST);
+        if (!isXls && !isXlsx && !isCsv) {
+            throw new CustomException("File không đúng định dạng (.xls, .xlsx, .csv)", HttpStatus.BAD_REQUEST);
         }
-        DonHangSanPham donHangSanPham;
-        try (InputStream inputStream = multipartFile.getInputStream();
-             Workbook workbook = isXlsx ? new XSSFWorkbook(inputStream) : new HSSFWorkbook(inputStream)) {
 
-            Sheet sheet = workbook.getSheetAt(0);
-            int soLuong = sheet.getLastRowNum();
+        DonHangSanPham donHangSanPham = new DonHangSanPham();
+        donHangSanPham.setTenFile(fileName);
+        donHangSanPham.setDonHang(donHang);
+        donHangSanPham.setSanPham(sanPham);
 
-            donHangSanPham = new DonHangSanPham();
-            donHangSanPham.setTenFile(fileName);
-            donHangSanPham.setSoLuong(soLuong);
-            donHangSanPham.setDonHang(donHang);
-            donHangSanPham.setSanPham(sanPham);
+        try {
+            if (isCsv) {
+                // Đọc CSV
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(multipartFile.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    int lineNumber = 0;
+                    int soLuong = 0;
+                    while ((line = reader.readLine()) != null) {
+                        String[] cells = line.split(";", -1); // giữ cả ô rỗng
+                        if(cells[0].startsWith("Start") || cells[0].startsWith("End")){
+                            continue;
+                        }
 
-            for(int i = 1; i <= sheet.getLastRowNum(); i++){
-                Row row = sheet.getRow(i);
-                if(row == null) continue;
+                        Dulieu dulieu = new Dulieu();
+                        StringBuilder sb = new StringBuilder();
 
-                Dulieu dulieu = new Dulieu();
-                StringBuilder sb = new StringBuilder();
+                        int filter= 1;
+                        int partition = cells[7].length() == 6 ? 6 : cells[7].length() == 7 ? 5 : cells[7].length() == 8 ? 4 : cells[7].length() == 9 ? 3 : cells[7].length() == 10 ? 2 : cells[7].length() == 11 ? 1 : 0;
+                        long serial = Long.parseLong(cells[9]);
 
-                for (int j = 0; j <= row.getLastCellNum(); j++) {
-                    Cell cell = row.getCell(j);
-                    if (cell != null && j != viTriEPC) {
-                        sb.append(getCellStringValue(cell)).append("|");
-                    }
-                    if (j == viTriEPC) {
-                        Cell cellEPC = row.getCell(viTriEPC);
-                        if (cellEPC != null) {
-                            dulieu.setDataGoc(getCellStringValue(cellEPC));
-                            if(isHex){
-                                dulieu.setEpc(ConvertToHex.convertToHexadecimal(getCellStringValue(cellEPC)));
+                        SanPham sp = new SanPham();
+                        Upc upc1 = new Upc(cells[5], serial);
+                        sp.setUpc(upc1);
+                        sp.setFilter(filter);
+                        sp.setPartition(partition);
+
+
+                        String epc = Encoder.taoEPCtheoChuanGS1(sp);
+
+                        for (int j = 0; j < cells.length; j++) {
+                            if (j != viTriEPC) {
+                                sb.append(cells[j]).append("|");
                             } else {
-                                dulieu.setEpc(getCellStringValue(cellEPC));
+                                dulieu.setDataGoc(epc);
+                                dulieu.setEpc(epc);
                             }
                         }
+                        dulieu.setSku(sanPham.getSku());
+                        dulieu.setDonHang(donHang);
+                        dulieu.setSanPham(sanPham);
+                        dulieu.setNoiDungBienDoi(sb.toString());
+
+                        listDuLieu.add(dulieu);
+                        soLuong++;
                     }
+                    donHangSanPham.setSoLuong(soLuong);
                 }
 
-                dulieu.setSku(sanPham.getSku());
-                dulieu.setDonHang(donHang);
-                dulieu.setSanPham(sanPham);
-                dulieu.setNoiDungBienDoi(sb.toString());
+            } else {
+                // Đọc Excel
+                try (InputStream inputStream = multipartFile.getInputStream();
+                     Workbook workbook = isXlsx ? new XSSFWorkbook(inputStream) : new HSSFWorkbook(inputStream)) {
 
-                listDuLieu.add(dulieu);
+                    Sheet sheet = workbook.getSheetAt(0);
+                    int soLuong = sheet.getLastRowNum();
+
+                    donHangSanPham.setSoLuong(soLuong);
+
+                    for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                        Row row = sheet.getRow(i);
+                        if (row == null) continue;
+
+                        Dulieu dulieu = new Dulieu();
+                        StringBuilder sb = new StringBuilder();
+
+                        for (int j = 0; j <= row.getLastCellNum(); j++) {
+                            Cell cell = row.getCell(j);
+                            if (cell != null && j != viTriEPC) {
+                                sb.append(getCellStringValue(cell)).append("|");
+                            }
+                            if (j == viTriEPC) {
+                                Cell cellEPC = row.getCell(viTriEPC);
+                                if (cellEPC != null) {
+                                    dulieu.setDataGoc(getCellStringValue(cellEPC));
+                                    if (isHex) {
+                                        dulieu.setEpc(ConvertToHex.convertToHexadecimal(getCellStringValue(cellEPC)));
+                                    } else {
+                                        dulieu.setEpc(getCellStringValue(cellEPC));
+                                    }
+                                }
+                            }
+                        }
+
+                        dulieu.setSku(sanPham.getSku());
+                        dulieu.setDonHang(donHang);
+                        dulieu.setSanPham(sanPham);
+                        dulieu.setNoiDungBienDoi(sb.toString());
+
+                        listDuLieu.add(dulieu);
+                    }
+                }
             }
-
         } catch (Exception e) {
+            e.printStackTrace();
             throw new CustomException("Lỗi khi đọc file: " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
         return donHangSanPham;
