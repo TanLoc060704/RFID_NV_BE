@@ -47,6 +47,8 @@ dependencies {
     dependencies {
         implementation 'com.cloudinary:cloudinary-http44:1.29.0'
     }
+    implementation 'org.hibernate.common:hibernate-commons-annotations:6.0.6.Final'
+
 }
 
 tasks.named('test') {
