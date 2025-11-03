@@ -73,28 +73,34 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
         });
     }*/
 
-        @Transactional
-        public void batchInsertDulieu(List<Dulieu> dulieus) {
-            String sql = "INSERT INTO data (epc, sku, don_hang_id, tid, data_goc, noi_dung_bien_doi, don_hang_san_pham_id) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
+    @Transactional
+    public void batchInsertDulieu(List<Dulieu> dulieus) {
+        String sql = "INSERT INTO data (epc, sku, don_hang_id, tid, data_goc, noi_dung_bien_doi, don_hang_san_pham_id) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-            int batchSize = 1000;
-            int total = dulieus.size();
+        int batchSize = 1000;
+        int total = dulieus.size();
 
-            for (int i = 0; i < total; i += batchSize) {
-                List<Dulieu> batchList = dulieus.subList(i, Math.min(i + batchSize, total));
+        for (int i = 0; i < total; i += batchSize) {
+            List<Dulieu> batchList = dulieus.subList(i, Math.min(i + batchSize, total));
 
+            try {
                 jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
                     @Override
                     public void setValues(PreparedStatement ps, int j) throws SQLException {
                         Dulieu d = batchList.get(j);
-                        ps.setString(1, d.getEpc());
-                        ps.setString(2, d.getSku());
-                        ps.setInt(3, d.getDonHang().getDonHangId());
-                        ps.setString(4, d.getTid());
-                        ps.setString(5, d.getDataGoc());
-                        ps.setString(6, d.getNoiDungBienDoi());
-                        ps.setInt(7, d.getDonHangSanPham().getDonHangSanPhamId());
+                        try {
+                            ps.setString(1, d.getEpc());
+                            ps.setString(2, d.getSku());
+                            ps.setInt(3, d.getDonHang().getDonHangId());
+                            ps.setString(4, d.getTid());
+                            ps.setString(5, d.getDataGoc());
+                            ps.setString(6, d.getNoiDungBienDoi());
+                            ps.setInt(7, d.getDonHangSanPham().getDonHangSanPhamId());
+                        } catch (Exception e) {
+                            System.err.println("❌ Lỗi khi set dữ liệu batch dòng " + j + ": " + d);
+                            throw e;  // ném lại lỗi để batch dừng và vào catch phía ngoài
+                        }
                     }
 
                     @Override
@@ -102,8 +108,13 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
                         return batchList.size();
                     }
                 });
+            } catch (Exception ex) {
+                System.err.println("🚨 Batch lỗi tại batch từ " + i + " đến " + (i + batchList.size()));
+                ex.printStackTrace();
             }
         }
+    }
+
 
     @Override
     public List<DonHangSanPhamDTO> dSSanPhamTheoDonHang(String maLenh) {
@@ -266,6 +277,9 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
                 allDuLieu.addAll(listDuLieu);
                 listDuLieu.clear();
 
+            } catch (CustomException ce) {
+                ce.printStackTrace();
+                throw ce;
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new CustomException("Error processing file: " + multipartFile.getOriginalFilename(), HttpStatus.BAD_REQUEST);
@@ -276,6 +290,7 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
             long startluu = System.currentTimeMillis();
             // Lưu hàng loạt để tối ưu tốc độ
             donHangSanPhamRepository.saveAll(dsDonHangSanPham);
+//            duLieuRepository.saveAll(allDuLieu);
             batchInsertDulieu(allDuLieu);
             System.out.println("Thời gian luu du lieu: " +i+" " + (System.currentTimeMillis() - startluu) + "ms");
             i++;
@@ -408,12 +423,10 @@ public class DonHangSanPhamServiceImpl implements DonHangSanPhamService {
         try {
             // Xóa tất cả dữ liệu liên quan đến donHangSanPham
             List<Dulieu> dulieus = duLieuRepository.findByDonHangSanPhamDonHangSanPhamId(donHangSanPhamId);
-            for (Dulieu dulieu : dulieus) {
-                duLieuRepository.delete(dulieu);
-            }
-            // Xóa donHangSanPham
+            duLieuRepository.deleteAll(dulieus);
             donHangSanPhamRepository.delete(donHangSanPham);
         } catch (DataIntegrityViolationException e) {
+            e.printStackTrace();
             throw new CustomException("Không thể xóa đơn hàng sản phẩm này vì nó đang được sử dụng", HttpStatus.BAD_REQUEST);
         }
     }

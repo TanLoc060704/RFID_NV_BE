@@ -46,6 +46,7 @@ dependencies {
     implementation 'org.apache.poi:poi-ooxml:5.2.3'  // Thư viện Apache POI cho định dạng Excel (XLSX)
     implementation 'org.apache.poi:poi:5.2.3'  // Thư viện Apache POI cho định dạng Excel (XLS)
     implementation 'com.cloudinary:cloudinary-http44:1.29.0'
+    implementation 'org.hibernate.common:hibernate-commons-annotations:6.0.6.Final'
 }
 
 tasks.named('test') {
