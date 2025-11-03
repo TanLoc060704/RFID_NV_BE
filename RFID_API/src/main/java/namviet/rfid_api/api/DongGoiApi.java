@@ -68,6 +68,8 @@ public class DongGoiApi {
 
     @PutMapping("/{id}")
     public ResponseObject<DongGoiDTO> update(@PathVariable Integer id, @RequestBody DongGoiDTO dongGoiDTO) {
+
+        System.out.println(dongGoiDTO.isStatus());
         try {
             return ResponseObject.<DongGoiDTO>builder()
                     .status(HttpStatus.OK)

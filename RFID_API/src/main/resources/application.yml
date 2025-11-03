@@ -12,10 +12,10 @@ spring:
     port: 8080
 
   datasource:
-    url: jdbc:sqlserver://localhost:1433;databaseName=rfid_nam_viet;encrypt=true;trustServerCertificate=true;
+    url: jdbc:sqlserver://localhost:1435;databaseName=rfid_nam_viet;encrypt=true;trustServerCertificate=true;
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
     username: sa
-    password: Hihi123456@
+    password: YourStrong!Passw0rd
     hikari:
       maximum-pool-size: 50
       minimum-idle: 5
@@ -39,6 +39,6 @@ jwt:
   secret-key: $2a$12$5pIKMCnwfMmotzq3GnVbMOt6dnw5qH8vBG4Lt4vyWgF.NsRH1mRqy
 
 cloudinary:
-  cloud-name: dx66jgmlq
-  api-key: 512594293551369
-  api-secret: lhFCO61qmidjvmhmQSQN3jN69ds
+  cloud-name: dpfcf9cgt
+  api-key: 349128361531382
+  api-secret: 5Kj9q2un9wG06rzjvFAe6aNNiH8
